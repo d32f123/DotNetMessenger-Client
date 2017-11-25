@@ -1,0 +1,20 @@
+﻿<Window x:Class="DotNetMessenger.WPFClient.Windows.WelcomeWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:auth="clr-namespace:DotNetMessenger.WPFClient.ViewModels.Auth"
+        mc:Ignorable="d"
+        Title="WelcomeWindow" Width="210" Height="Auto" SizeToContent="Height" ResizeMode="NoResize">
+    <Window.DataContext>
+        <auth:WelcomeViewModel/>
+    </Window.DataContext>
+    <StackPanel Orientation="Vertical" x:Name="Panel" Height="Auto">
+        <TextBlock HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top">
+            <Run Text="Войдите или зарегистрируйтесь, чтобы "/>
+            <Run Text="продолжить"/>
+        </TextBlock>
+        <Button Content="Я уже был здесь" Margin="10, 5, 10, 6" HorizontalAlignment="Stretch" Command="{Binding Path=LoginCommand}"/>
+        <Button Content="Я здесь впервые" Margin="10, 0, 10, 6" HorizontalAlignment="Stretch" Command="{Binding Path=RegisterCommand}"/>
+    </StackPanel>
+</Window>

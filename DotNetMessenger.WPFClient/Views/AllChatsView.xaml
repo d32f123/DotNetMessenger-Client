@@ -1,0 +1,32 @@
+﻿<UserControl x:Class="DotNetMessenger.WPFClient.Views.AllChatsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:componentModel="clr-namespace:System.ComponentModel;assembly=WindowsBase"
+             xmlns:viewModels="clr-namespace:DotNetMessenger.WPFClient.ViewModels"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance viewModels:AllChatsViewModel}">
+    <UserControl.Resources>
+        <CollectionViewSource x:Key="HistorySorted" Source="{Binding Path=Histories}" IsLiveSortingRequested="True">
+            <CollectionViewSource.SortDescriptions>
+                <componentModel:SortDescription PropertyName="Date"  Direction="Descending"/>
+            </CollectionViewSource.SortDescriptions>
+        </CollectionViewSource>
+    </UserControl.Resources>
+    <Grid>
+        <TabControl>
+            <TabItem Header="Пользователи">
+                <ListView ItemContainerStyle="{StaticResource ListViewItemOptionStyle}" SelectionMode="Single" 
+                                    SelectedItem="{Binding Path=CurrentModel, Mode=OneWayToSource}" ItemsSource="{Binding Path=Users}"/>
+            </TabItem>
+            <TabItem Header="Группы">
+                <ListView ItemContainerStyle="{StaticResource ListViewItemOptionStyle}" SelectionMode="Single"
+                          SelectedItem="{Binding Path=CurrentModel, Mode=OneWayToSource}" ItemsSource="{Binding Path=Chats}"/>
+            </TabItem>
+            <TabItem Header="История">
+                <ListView ItemContainerStyle="{StaticResource ListViewItemOptionStyle}" SelectionMode="Single"
+                          SelectedItem="{Binding Path=CurrentModel, Mode=OneWayToSource}" ItemsSource="{Binding Source={StaticResource HistorySorted}}"/>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>

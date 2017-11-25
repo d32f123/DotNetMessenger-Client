@@ -1,0 +1,36 @@
+﻿<UserControl x:Class="DotNetMessenger.WPFClient.Views.NewChatView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:viewModels="clr-namespace:DotNetMessenger.WPFClient.ViewModels"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300" d:DataContext="{d:DesignInstance viewModels:NewChatViewModel}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <DockPanel>
+            <Label Content="Имя чата:"/>
+            <TextBox Text="{Binding Path=Title, Mode=TwoWay}" VerticalContentAlignment="Center"/>
+        </DockPanel>
+        <Label Content="Выбери пользователей:" Grid.Row="1"/>
+        <ListView Grid.Row="2" ItemContainerStyle="{StaticResource TransparentSelectionStyle}" ItemsSource="{Binding Path=UsersWithChecks}">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <WrapPanel>
+                        <CheckBox VerticalAlignment="Center" HorizontalAlignment="Center" IsChecked="{Binding Path=IsChecked, Mode=TwoWay}"/>
+                        <ContentPresenter Content="{Binding Path=UserViewModel}"/>
+                    </WrapPanel>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+        <DockPanel Grid.Row="3">
+            <Button Command="{Binding Path=CreateChatCommand}" DockPanel.Dock="Left" Width="150" Content="Создать" IsDefault="True"/>
+            <Button Command="{Binding Path=CloseCommand}" DockPanel.Dock="Right" Content="Выйти"  Margin="20, 0, 0, 0"/>
+        </DockPanel>
+    </Grid>
+</UserControl>

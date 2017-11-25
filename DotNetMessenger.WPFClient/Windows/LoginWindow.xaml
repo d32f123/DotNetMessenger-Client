@@ -1,0 +1,60 @@
+﻿<Window x:Class="DotNetMessenger.WPFClient.Windows.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:auth="clr-namespace:DotNetMessenger.WPFClient.ViewModels.Auth"
+        xmlns:wpfClient="clr-namespace:DotNetMessenger.WPFClient"
+        mc:Ignorable="d"
+        Title="LoginWindow" Height="Auto" Width="300" SizeToContent="Height" ResizeMode="NoResize">
+    <Window.DataContext>
+        <auth:LoginViewModel/>
+    </Window.DataContext>
+    <StackPanel>
+        <TextBlock HorizontalAlignment="Left" TextAlignment="Center" Margin="10,10,0,0" 
+                   TextWrapping="Wrap" Text="Привет! Введи свой логин и пароль, и мы тебя впустим" VerticalAlignment="Top"/>
+        <DockPanel Height="{Binding ElementName=LoginBox, Path=Height}" Margin="10,2,10,0">
+            <Label Content="Логин:" HorizontalContentAlignment="Left" VerticalContentAlignment="Center"/>
+            <TextBox Name="LoginBox"  Text="{Binding Path=Username, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"
+                     VerticalContentAlignment="Center" HorizontalAlignment="Stretch" Height="23">
+                <TextBox.InputBindings>
+                    <KeyBinding Command="{Binding Path=LoginCommand}" Key="Enter" />
+                </TextBox.InputBindings>
+            </TextBox>
+        </DockPanel>
+        <ContentPresenter Content="{Binding ElementName=LoginBox, Path=(Validation.Errors).CurrentItem}"/>
+        <DockPanel Margin="10,2,10,0" VerticalAlignment="Top">
+            <Label Content="Пароль:" HorizontalContentAlignment="Left" VerticalContentAlignment="Center"/>
+            <PasswordBox HorizontalAlignment="Stretch" Name="PasswordBox" wpfClient:PasswordBoxAssistant.BindPassword="True" 
+                     wpfClient:PasswordBoxAssistant.BoundPassword="{Binding Path=Password, Mode=TwoWay, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"
+                     VerticalContentAlignment="Center" Height="23" >
+                <PasswordBox.InputBindings>
+                    <KeyBinding Command="{Binding Path=LoginCommand}" Key="Enter"/>
+                </PasswordBox.InputBindings>
+            </PasswordBox>
+        </DockPanel>
+        <ContentPresenter Content="{Binding ElementName=PasswordBox, Path=(Validation.Errors).CurrentItem}"/>
+        <ContentPresenter Content="{Binding Path=CurrentValidationError}" />
+        <Grid Margin="0,0,0,7">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <CheckBox Grid.Row="0" Grid.Column="0" IsChecked="{Binding Path=RememberLogin}" 
+                      VerticalAlignment="Center" Content="Запомнить логин" Margin="10,2,0,0">
+                <CheckBox.InputBindings>
+                    <KeyBinding Command="{Binding Path=LoginCommand}" Key="Enter" />
+                </CheckBox.InputBindings>
+            </CheckBox>
+            <Button Grid.Row="0" Grid.Column="1"  Content="Войти" Margin="0, 3px, 10px, 1px" 
+                HorizontalAlignment="Right" Width="75" Command="{Binding Path=LoginCommand}" 
+                CommandParameter="{Binding ElementName=PasswordBox}"/>
+            <Button Grid.Row="1" Grid.Column="1" Content="Назад" Margin="0, 1px, 10px, 0" 
+                    HorizontalAlignment="Right" Width="58" Command="{Binding Path=CloseCommand}"/>
+        </Grid>
+    </StackPanel>
+</Window>
