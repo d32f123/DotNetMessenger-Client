@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using DotNetMessenger.Model;
+using DotNetMessenger.WPFClient.Router;
+using DotNetMessenger.WPFClient.ViewModels.Info;
 
 namespace DotNetMessenger.WPFClient.ViewModels.Entities
 {
@@ -20,13 +23,16 @@ namespace DotNetMessenger.WPFClient.ViewModels.Entities
             }
         }
 
-        public ChatViewModel()
+        public ChatViewModel() : this(new Chat())
         {
-            _currentChat = new Chat();
         }
 
         public ChatViewModel(Chat currentChat)
         {
+            ContextActions = new ObservableCollection<ContextAction>
+            {
+                new ContextAction {Name = "Info", Action = new RelayCommand(ShowInfoViewModel)}
+            };
             _currentChat = currentChat;
         }
 
@@ -34,5 +40,13 @@ namespace DotNetMessenger.WPFClient.ViewModels.Entities
         public override string SecondaryString => string.Empty;
         public override byte[] Image => _currentChat.Info?.Avatar;
         public override DateTime Date => DateTime.MinValue;
+
+        public sealed override ObservableCollection<ContextAction> ContextActions { get; set; }
+            
+
+        private void ShowInfoViewModel(object o)
+        {
+            ViewHostBuilder.GetViewHost().HostView(new ChatInfoViewModel(_currentChat));
+        }
     }
 }

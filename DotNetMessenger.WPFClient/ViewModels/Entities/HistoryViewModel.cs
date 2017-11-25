@@ -1,15 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Windows;
 using DotNetMessenger.Model;
 using DotNetMessenger.RClient;
+using DotNetMessenger.WPFClient.Router;
+using DotNetMessenger.WPFClient.ViewModels.Info;
 
 namespace DotNetMessenger.WPFClient.ViewModels.Entities
 {
     public class HistoryViewModel : EntityViewModel, IDisposable
     {
+        private User _user;
+        private Chat _chat;
+
+        private bool _isUser;
         private int _chatId = -1;
         private byte[] _avatar;
         private string _title;
@@ -27,6 +34,9 @@ namespace DotNetMessenger.WPFClient.ViewModels.Entities
                 _avatar = value?.Info?.Avatar;
                 _title = value?.Info?.Title ?? value?.Id.ToString();
                 LastMessage = null;
+                _user = null;
+                _chat = value;
+                _isUser = false;
 
                 OnPropertyChanged(nameof(MainString));
                 OnPropertyChanged(nameof(SecondaryString));
@@ -59,6 +69,9 @@ namespace DotNetMessenger.WPFClient.ViewModels.Entities
                 _avatar = value?.UserInfo?.Avatar;
                 _title = value?.Username ?? string.Empty;
                 LastMessage = null;
+                _user = value;
+                _chat = null;
+                _isUser = true;
 
                 OnPropertyChanged(nameof(MainString));
                 OnPropertyChanged(nameof(SecondaryString));
@@ -125,7 +138,24 @@ namespace DotNetMessenger.WPFClient.ViewModels.Entities
         }
 
         public HistoryViewModel()
-        {}
+        {
+            ContextActions = new ObservableCollection<ContextAction>
+            {
+                new ContextAction {Name = "Info", Action = new RelayCommand(ShowInfoViewModel)}
+            };
+        }
+
+        private void ShowInfoViewModel(object o)
+        {
+            if (!_isUser)
+                ViewHostBuilder.GetViewHost().HostView(new ChatInfoViewModel(_chat));
+            else
+            {
+                ViewHostBuilder.GetViewHost().HostView(new UserInfoViewModel(_user));
+            }
+        }
+
+        public sealed override ObservableCollection<ContextAction> ContextActions { get; set; }
 
         public HistoryViewModel(Chat chat)
         {

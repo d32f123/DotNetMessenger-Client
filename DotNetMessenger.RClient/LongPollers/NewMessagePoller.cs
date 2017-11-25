@@ -77,7 +77,7 @@ namespace DotNetMessenger.RClient.LongPollers
         protected override async Task OnSuccessfulResponse(HttpResponseMessage response)
         {
             var list = await response.Content.ReadAsAsync<List<Message>>();
-            if (list == null || !list.Any()) return;
+            if (list == null) return;
 
             var lastMessageId = -2;
             var lastChatId = -1;
@@ -126,7 +126,8 @@ namespace DotNetMessenger.RClient.LongPollers
                 status.IsPolled = true;
             }
 
-            NewMessagesEvent?.Invoke(this, msgsToBeInvoked);
+            if (msgsToBeInvoked.Any())
+                NewMessagesEvent?.Invoke(this, msgsToBeInvoked);
         }
     }
 }

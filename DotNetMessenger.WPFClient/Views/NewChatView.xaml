@@ -15,7 +15,7 @@
         </Grid.RowDefinitions>
         <DockPanel>
             <Label Content="Имя чата:"/>
-            <TextBox Text="{Binding Path=Title, Mode=TwoWay}" VerticalContentAlignment="Center"/>
+            <TextBox Text="{Binding Path=Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center"/>
         </DockPanel>
         <Label Content="Выбери пользователей:" Grid.Row="1"/>
         <ListView Grid.Row="2" ItemContainerStyle="{StaticResource TransparentSelectionStyle}" ItemsSource="{Binding Path=UsersWithChecks}">

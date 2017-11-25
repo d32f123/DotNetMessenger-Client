@@ -5,11 +5,19 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:entities="clr-namespace:DotNetMessenger.WPFClient.ViewModels.Entities"
              xmlns:converters="clr-namespace:DotNetMessenger.WPFClient.Converters"
+             xmlns:viewModels="clr-namespace:DotNetMessenger.WPFClient.ViewModels"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance entities:EntityViewModel}">
     <UserControl.Resources>
         <converters:DateTimeToDateStringConverter x:Key="DateTimeToDateStringConverter" />
     </UserControl.Resources>
     <Grid>
+        <Grid.ContextMenu>
+            <ContextMenu ItemsSource="{Binding Path=ContextActions}">
+                <DataTemplate DataType="{x:Type viewModels:ContextAction}">
+                    <MenuItem Header="{Binding Path=Name}" Command="{Binding Path=Action}"></MenuItem>
+                </DataTemplate>
+            </ContextMenu>
+        </Grid.ContextMenu>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="Auto"/>

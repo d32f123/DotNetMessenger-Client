@@ -9,7 +9,7 @@
     <UserControl.Resources>
         <CollectionViewSource x:Key="HistorySorted" Source="{Binding Path=Histories}" IsLiveSortingRequested="True">
             <CollectionViewSource.SortDescriptions>
-                <componentModel:SortDescription PropertyName="Date"  Direction="Descending"/>
+                <componentModel:SortDescription PropertyName="Date" Direction="Descending"/>
             </CollectionViewSource.SortDescriptions>
         </CollectionViewSource>
     </UserControl.Resources>
@@ -17,15 +17,15 @@
         <TabControl>
             <TabItem Header="Пользователи">
                 <ListView ItemContainerStyle="{StaticResource ListViewItemOptionStyle}" SelectionMode="Single" 
-                                    SelectedItem="{Binding Path=CurrentModel, Mode=OneWayToSource}" ItemsSource="{Binding Path=Users}"/>
+                                    SelectedValue="{Binding Path=CurrentModel, Mode=TwoWay}" ItemsSource="{Binding Path=Users}"/>
             </TabItem>
             <TabItem Header="Группы">
                 <ListView ItemContainerStyle="{StaticResource ListViewItemOptionStyle}" SelectionMode="Single"
-                          SelectedItem="{Binding Path=CurrentModel, Mode=OneWayToSource}" ItemsSource="{Binding Path=Chats}"/>
+                          SelectedValue="{Binding Path=CurrentModel, Mode=TwoWay}" ItemsSource="{Binding Path=Chats}"/>
             </TabItem>
             <TabItem Header="История">
                 <ListView ItemContainerStyle="{StaticResource ListViewItemOptionStyle}" SelectionMode="Single"
-                          SelectedItem="{Binding Path=CurrentModel, Mode=OneWayToSource}" ItemsSource="{Binding Source={StaticResource HistorySorted}}"/>
+                          SelectedValue="{Binding Path=CurrentModel, Mode=TwoWay}" ItemsSource="{Binding Source={StaticResource HistorySorted}}"/>
             </TabItem>
         </TabControl>
     </Grid>

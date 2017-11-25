@@ -1,0 +1,66 @@
+﻿<UserControl x:Class="DotNetMessenger.WPFClient.Views.Info.ChatInfoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:DotNetMessenger.WPFClient.Views.Info"
+             xmlns:info="clr-namespace:DotNetMessenger.WPFClient.ViewModels.Info"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="200" d:DataContext="{d:DesignInstance info:ChatInfoViewModel}">
+    <StackPanel Orientation="Vertical">
+        <Border Background="GhostWhite"  BorderBrush="Gainsboro" BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="5"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Image Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" Width="60" Height="60">
+                    <Image.Source>
+                        <Binding Path="Avatar">
+                            <Binding.TargetNullValue>
+                                <ImageSource>/Resources/defaultAvatar.png</ImageSource>
+                            </Binding.TargetNullValue>
+                        </Binding>
+                    </Image.Source>
+                </Image>
+                <Label Grid.Column="1" Grid.Row="0" Content="{Binding Path=Title}"/>
+                <Label Grid.Column="1" Grid.Row="2" Content="{Binding Path=UsersTotal}"/>
+            </Grid>
+        </Border>
+        <DataGrid ItemsSource="{Binding Path=UsersInfo}" AutoGenerateColumns="False">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="C" Width="10" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate DataType="{x:Type info:ChatUserEntryViewModel}">
+                            <Image Width="10" Height="10" DockPanel.Dock="Left">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Path=IsCreator}" Value="True">
+                                                <Setter Property="Source" Value="/Resources/star.png"></Setter>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Path=IsCreator}" Value="True">
+                                                <Setter Property="Source" Value="/Resources/empty.png"></Setter>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Username" IsReadOnly="True" Binding="{Binding Path=Username}"/>
+                <DataGridCheckBoxColumn Header="R" IsReadOnly="True" Binding="{Binding Path=ReadPermission}"/>
+                <DataGridCheckBoxColumn Header="W" IsReadOnly="True" Binding="{Binding Path=WritePermission}"/>
+                <DataGridCheckBoxColumn Header="A" IsReadOnly="True" Binding="{Binding Path=AttachPermission}"/>
+                <DataGridCheckBoxColumn Header="I" IsReadOnly="True" Binding="{Binding Path=ChatInfoPermission}"/>
+                <DataGridCheckBoxColumn Header="U" IsReadOnly="True" Binding="{Binding Path=UserManagementPermission}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </StackPanel>
+</UserControl>

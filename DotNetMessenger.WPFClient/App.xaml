@@ -4,7 +4,9 @@
              xmlns:vm="clr-namespace:DotNetMessenger.WPFClient.ViewModels"
              xmlns:entities="clr-namespace:DotNetMessenger.WPFClient.ViewModels.Entities"
              xmlns:validation="clr-namespace:DotNetMessenger.WPFClient.Validation"
-             xmlns:views1="clr-namespace:DotNetMessenger.WPFClient.Views"
+             xmlns:views="clr-namespace:DotNetMessenger.WPFClient.Views"
+             xmlns:info="clr-namespace:DotNetMessenger.WPFClient.ViewModels.Info"
+             xmlns:infoView="clr-namespace:DotNetMessenger.WPFClient.Views.Info"
              StartupUri="MainWindow.xaml" Exit="App_OnExit" DispatcherUnhandledException="App_OnDispatcherUnhandledException">
     <Application.Resources>
         <DataTemplate DataType="{x:Type ValidationError}">
@@ -17,25 +19,31 @@
             </TextBlock>
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:AllChatsViewModel}">
-            <views1:AllChatsView/>
+            <views:AllChatsView/>
         </DataTemplate>
         <DataTemplate DataType="{x:Type entities:EntityViewModel}">
-            <views1:EntityView/>
+            <views:EntityView/>
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:AttachmentViewModel}">
-            <views1:AttachmentView/>
+            <views:AttachmentView/>
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:MessageViewModel}">
-            <views1:MessageView/>
+            <views:MessageView/>
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:SenderViewModel}">
-            <views1:SenderView/>
+            <views:SenderView/>
         </DataTemplate>
         <DataTemplate DataType="{x:Type validation:ValidationCustomError}">
             <TextBlock FontStyle="Italic" Foreground="Red" HorizontalAlignment="Center" Margin="0,1" Text="{Binding Path=Description}"/>
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:NewChatViewModel}">
-            <views1:NewChatView/>
+            <views:NewChatView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type info:ChatInfoViewModel}">
+            <infoView:ChatInfoView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type info:UserInfoViewModel}">
+            <infoView:UserInfoView/>
         </DataTemplate>
         <Style x:Key="TransparentSelectionStyle" TargetType="{x:Type ListViewItem}">
             <Setter Property="Background" Value="Transparent" />

@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using DotNetMessenger.Model;
+using DotNetMessenger.WPFClient.Router;
+using DotNetMessenger.WPFClient.ViewModels.Info;
 
 namespace DotNetMessenger.WPFClient.ViewModels.Entities
 {
@@ -21,15 +24,25 @@ namespace DotNetMessenger.WPFClient.ViewModels.Entities
             }
         }
 
-        public UserViewModel()
+        public UserViewModel() : this(new User())
         {
-            CurrentUser = new User();
         }
 
         public UserViewModel(User user)
         {
             CurrentUser = user;
+            ContextActions = new ObservableCollection<ContextAction>
+            {
+                new ContextAction {Name = "Info", Action = new RelayCommand(ShowInfoViewModel)}
+            };
         }
+
+        private void ShowInfoViewModel(object o)
+        {
+            ViewHostBuilder.GetViewHost().HostView(new UserInfoViewModel(_currentUser));
+        }
+
+        public sealed override ObservableCollection<ContextAction> ContextActions { get; set; }
 
         public override string MainString => _currentUser?.Username ?? string.Empty;
 

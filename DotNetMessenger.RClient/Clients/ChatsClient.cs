@@ -136,6 +136,7 @@ namespace DotNetMessenger.RClient.Clients
                 var ret = await response.Content.ReadAsAsync<Chat>();
                 _chatCache.Add(ret.Id, ret);
                 _dialogCache.Add(otherId, ret.Id);
+                return ret;
             }
             return null;
         }

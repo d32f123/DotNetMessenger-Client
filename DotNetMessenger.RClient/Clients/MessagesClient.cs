@@ -188,7 +188,7 @@ namespace DotNetMessenger.RClient.Clients
                 if (_messageCache.ContainsKey(id))
                 {
                     _messageCache[id].RemoveAll(x => x.ExpirationDate != null && x.ExpirationDate < DateTime.Now);
-                    var cached = _messageCache[id].Last();
+                    var cached = _messageCache[id].LastOrDefault();
                     _semaphore.Release();
                     _newMessagesSemaphore.Release();
                     return cached;
@@ -210,14 +210,14 @@ namespace DotNetMessenger.RClient.Clients
 
         public async Task SendMessageAsync(int chatId, Message message)
         {
+            await _semaphore.WaitAsync();
             lock (_newChatMessageEvents)
             {
                 if (_newChatMessageEvents.ContainsKey(chatId))
                 {
-                    _newChatMessageEvents[chatId]?.Invoke(this, new[] { message });
+                    Task.Run(() => _newChatMessageEvents[chatId]?.Invoke(this, new[] { message }));
                 }
             }
-            await _semaphore.WaitAsync();
             var response = await _client.PostAsJsonAsync($"messages/{chatId}/{UserId}", message).ConfigureAwait(false);
             if (response.IsSuccessStatusCode)
             {

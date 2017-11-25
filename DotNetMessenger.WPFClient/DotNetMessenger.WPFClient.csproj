@@ -97,10 +97,14 @@
     <Compile Include="ViewModels\AttachmentViewModel.cs" />
     <Compile Include="ViewModels\Auth\LoginViewModel.cs" />
     <Compile Include="ViewModels\Auth\WelcomeViewModel.cs" />
+    <Compile Include="ViewModels\ContextAction.cs" />
     <Compile Include="ViewModels\Entities\ChatViewModel.cs" />
     <Compile Include="ViewModels\Entities\EntityViewModel.cs" />
     <Compile Include="ViewModels\Entities\HistoryViewModel.cs" />
     <Compile Include="ViewModels\Entities\UserViewModel.cs" />
+    <Compile Include="ViewModels\Info\ChatInfoViewModel.cs" />
+    <Compile Include="ViewModels\Info\ChatUserEntryViewModel.cs" />
+    <Compile Include="ViewModels\Info\UserInfoViewModel.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
     <Compile Include="ViewModels\MessageViewModel.cs" />
     <Compile Include="ViewModels\NewChatViewModel.cs" />
@@ -114,6 +118,12 @@
     </Compile>
     <Compile Include="Views\EntityView.xaml.cs">
       <DependentUpon>EntityView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Info\ChatInfoView.xaml.cs">
+      <DependentUpon>ChatInfoView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Info\UserInfoView.xaml.cs">
+      <DependentUpon>UserInfoView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\MessageView.xaml.cs">
       <DependentUpon>MessageView.xaml</DependentUpon>
@@ -163,6 +173,14 @@
     <Page Include="Views\EntityView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Info\ChatInfoView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Info\UserInfoView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\MessageView.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -216,7 +234,9 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Resource Include="Resources\star.png" />
+  </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\defaultAvatar.png" />
     <Resource Include="Resources\fileIcon.png" />
@@ -226,6 +246,9 @@
       <Project>{5129076a-55ef-4b31-bc54-e400dc1ca15a}</Project>
       <Name>DotNetMessenger.RClient</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\empty.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets" Condition="Exists('..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets')" />
