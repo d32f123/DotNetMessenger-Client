@@ -1,0 +1,91 @@
+﻿<UserControl x:Class="DotNetMessenger.WPFClient.Views.Info.SetUserInfoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:DotNetMessenger.WPFClient.Views.Info"
+             xmlns:info="clr-namespace:DotNetMessenger.WPFClient.ViewModels.Info"
+             xmlns:converters="clr-namespace:DotNetMessenger.WPFClient.Converters"
+             xmlns:model="clr-namespace:DotNetMessenger.Model;assembly=DotNetMessenger.Model"
+             xmlns:enums="clr-namespace:DotNetMessenger.Model.Enums;assembly=DotNetMessenger.Model"
+             mc:Ignorable="d" 
+             d:DesignHeight="360" d:DesignWidth="300" d:DataContext="{d:DesignInstance info:SetUserInfoViewModel}">
+    <UserControl.Resources>
+        <Style x:Key="InputBox" TargetType="TextBox">
+            <Setter Property="Width" Value="145"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"></Setter>
+        </Style>
+        <converters:EnumToBoolConverter x:Key="EnumToBoolConverter" />
+    </UserControl.Resources>
+    <StackPanel Orientation="Vertical" Background="White" Width="220" Height="Auto" Margin="5">
+        <Border Background="GhostWhite"  BorderBrush="Gainsboro" BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="5"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Image Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" Width="60" Height="60">
+                    <Image.Source>
+                        <Binding Path="Avatar">
+                            <Binding.TargetNullValue>
+                                <ImageSource>/Resources/defaultAvatar.png</ImageSource>
+                            </Binding.TargetNullValue>
+                        </Binding>
+                    </Image.Source>
+                </Image>
+                <TextBlock Grid.Column="1" Grid.Row="0" Margin="5,0,0,0" Text="{Binding Path=Username, Mode=OneWay}"/>
+                <TextBlock Grid.Column="1" Grid.Row="2" Margin="5,0,0,0" >ID: <Run Text="{Binding User.Id, Mode=OneWay}"/></TextBlock>
+            </Grid>
+        </Border>
+        <DockPanel Margin="3">
+            <Label Content="First name:" DockPanel.Dock="Left"/>
+            <TextBox Name="FirstNameBox" DockPanel.Dock="Right" Style="{StaticResource InputBox}" 
+                     Text="{Binding Path=FirstName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged,
+                ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
+        </DockPanel>
+        <ContentPresenter Content="{Binding ElementName=FirstNameBox, Path=(Validation.Errors).CurrentItem}"/>
+        <DockPanel Margin="3">
+            <Label Content="Last name:" DockPanel.Dock="Left"/>
+            <TextBox Name="LastNameBox" DockPanel.Dock="Right" Style="{StaticResource InputBox}" 
+                     Text="{Binding Path=LastName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged,
+                ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
+        </DockPanel>
+        <ContentPresenter Content="{Binding ElementName=LastNameBox, Path=(Validation.Errors).CurrentItem}"/>
+        <StackPanel Margin="3" Orientation="Vertical">
+            <Label Content="Gender:"/>
+            <DockPanel>
+                <RadioButton DockPanel.Dock="Left" Content="Female" 
+                             IsChecked="{Binding Path=Gender, Converter={StaticResource EnumToBoolConverter}, 
+                    ConverterParameter={x:Static enums:Genders.Female}}"/>
+                <RadioButton Margin="5,0,5,0" Content="Unknown" DockPanel.Dock="Right"
+                             IsChecked="{Binding Path=Gender, Converter={StaticResource EnumToBoolConverter}, 
+                    ConverterParameter={x:Static enums:Genders.Unknown}}"/>
+                <RadioButton Margin="5,0,5,0" Content="Male" VerticalContentAlignment="Center"
+                             IsChecked="{Binding Path=Gender, Converter={StaticResource EnumToBoolConverter}, 
+                    ConverterParameter={x:Static enums:Genders.Male}}"/>
+            </DockPanel>
+        </StackPanel>
+        <DockPanel Margin="3">
+            <Label DockPanel.Dock="Left" Content="Phone: "/>
+            <TextBox Name="PhoneBox" DockPanel.Dock="Right" Style="{StaticResource InputBox}" Text="{Binding Path=Phone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged,
+                ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
+        </DockPanel>
+        <ContentPresenter Content="{Binding ElementName=PhoneBox, Path=(Validation.Errors).CurrentItem}"/>
+        <DockPanel Margin="3">
+            <Label DockPanel.Dock="Left" Content="E-mail: "/>
+            <TextBox Name="EmailBox" DockPanel.Dock="Right" Style="{StaticResource InputBox}" Text="{Binding Path=Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged,
+                ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
+        </DockPanel>
+        <ContentPresenter Content="{Binding ElementName=EmailBox, Path=(Validation.Errors).CurrentItem}"/>
+        <DockPanel>
+            <Button Command="{Binding Path=SaveCommand}" Content="Save" Margin="5,2,0,5" Height="22" Width="85"/>
+            <Button Command="{Binding Path=CloseCommand}" Content="Exit" Margin="0,2,5,5" Height="22" Width="85" HorizontalAlignment="Right"/>
+        </DockPanel>
+    </StackPanel>
+</UserControl>

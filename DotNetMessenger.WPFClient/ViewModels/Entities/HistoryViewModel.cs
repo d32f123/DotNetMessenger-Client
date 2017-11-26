@@ -157,12 +157,12 @@ namespace DotNetMessenger.WPFClient.ViewModels.Entities
 
         public sealed override ObservableCollection<ContextAction> ContextActions { get; set; }
 
-        public HistoryViewModel(Chat chat)
+        public HistoryViewModel(Chat chat) : this()
         {
             Chat = chat;
         }
 
-        public HistoryViewModel(User user)
+        public HistoryViewModel(User user) : this()
         {
             User = user;
         }

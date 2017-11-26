@@ -17,7 +17,13 @@
         <TabControl>
             <TabItem Header="Пользователи">
                 <ListView ItemContainerStyle="{StaticResource ListViewItemOptionStyle}" SelectionMode="Single" 
-                                    SelectedValue="{Binding Path=CurrentModel, Mode=TwoWay}" ItemsSource="{Binding Path=Users}"/>
+                                    SelectedValue="{Binding Path=CurrentModel, Mode=TwoWay}" ItemsSource="{Binding Path=Users}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <ContentPresenter Content="{Binding}" HorizontalAlignment="Stretch"></ContentPresenter>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
             </TabItem>
             <TabItem Header="Группы">
                 <ListView ItemContainerStyle="{StaticResource ListViewItemOptionStyle}" SelectionMode="Single"

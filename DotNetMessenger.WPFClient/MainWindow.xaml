@@ -24,6 +24,7 @@
         </Grid.RowDefinitions>
         <Menu Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3">
             <MenuItem Header="_Создать группу" Command="{Binding Path=CreateGroupChatCommand}"/>
+            <MenuItem Header="_О себе" Command="{Binding Path=SetNewUserInfoCommand}"/>
         </Menu>
         <ContentControl Grid.Column="0" Grid.Row="1" Content="{Binding CurrentUser}"/>
         <ContentControl Grid.Column="0" Grid.Row="2" Grid.RowSpan="3" Content="{Binding AllChatsViewModel}"/>

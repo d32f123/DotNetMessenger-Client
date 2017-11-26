@@ -10,17 +10,19 @@
     <UserControl.Resources>
         <converters:DateTimeToDateStringConverter x:Key="DateTimeToDateStringConverter" />
     </UserControl.Resources>
-    <Grid>
+    <Grid HorizontalAlignment="Stretch">
         <Grid.ContextMenu>
             <ContextMenu ItemsSource="{Binding Path=ContextActions}">
-                <DataTemplate DataType="{x:Type viewModels:ContextAction}">
-                    <MenuItem Header="{Binding Path=Name}" Command="{Binding Path=Action}"></MenuItem>
-                </DataTemplate>
+                <ContextMenu.ItemTemplate>
+                    <DataTemplate DataType="{x:Type viewModels:ContextAction}">
+                        <MenuItem Header="{Binding Path=Name}" Command="{Binding Path=Action}"></MenuItem>
+                    </DataTemplate>
+                </ContextMenu.ItemTemplate>
             </ContextMenu>
         </Grid.ContextMenu>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
@@ -28,6 +30,7 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
+        
         <Image Grid.Column="0" Grid.RowSpan="3" Width="40" Height="40">
             <Image.Source>
                 <Binding Path="Image">
@@ -37,7 +40,7 @@
                 </Binding>
             </Image.Source>
         </Image>
-        <Label Grid.Column="1" Grid.Row="0" Content="{Binding Path=MainString}"/>
+        <Label Grid.Column="1" Grid.Row="0" Content="{Binding Path=MainString}" HorizontalContentAlignment="Left" HorizontalAlignment="Stretch"/>
         <Label Grid.Column="1" Grid.Row="2" Content="{Binding Path=SecondaryString}" Style="{StaticResource SecondaryLabelStyle}"/>
         <Label Grid.Column="2" Grid.Row="0" Content="{Binding Path=Date, Converter={StaticResource DateTimeToDateStringConverter}}" 
                Style="{StaticResource SecondaryLabelStyle}"/>

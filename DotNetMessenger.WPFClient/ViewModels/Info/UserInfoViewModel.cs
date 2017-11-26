@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Threading;
-using System.Windows;
 using DotNetMessenger.Model;
 using DotNetMessenger.Model.Enums;
-using DotNetMessenger.RClient;
 
 namespace DotNetMessenger.WPFClient.ViewModels.Info
 {
@@ -36,7 +31,16 @@ namespace DotNetMessenger.WPFClient.ViewModels.Info
         public string FirstName => _user?.UserInfo?.FirstName;
         public string LastName => _user?.UserInfo?.LastName;
         public DateTime DateOfBirth => _user?.UserInfo?.DateOfBirth ?? DateTime.MinValue;
-        public Genders Gender => _user?.UserInfo?.Gender ?? Genders.Unknown;
+
+        public string Gender
+        {
+            get
+            {
+                if (_user?.UserInfo?.Gender == null || _user?.UserInfo?.Gender == Genders.Unknown)
+                    return "Unknown";
+                return _user.UserInfo.Gender == Genders.Female ? "Female" : "Male";
+            }   
+        }
         public string Phone => _user?.UserInfo?.Phone;
         public string Email => _user?.UserInfo?.Email;
 

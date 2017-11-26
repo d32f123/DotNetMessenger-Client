@@ -3,10 +3,23 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:DotNetMessenger.WPFClient.Views.Info"
              xmlns:info="clr-namespace:DotNetMessenger.WPFClient.ViewModels.Info"
+             xmlns:componentModel="clr-namespace:System.ComponentModel;assembly=WindowsBase"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="200" d:DataContext="{d:DesignInstance info:ChatInfoViewModel}">
+    <UserControl.Resources>
+        <CollectionViewSource x:Key="UsersSorted" Source="{Binding Path=UsersInfo}" IsLiveSortingRequested="True">
+            <CollectionViewSource.SortDescriptions>
+                <componentModel:SortDescription PropertyName="IsCreator"  Direction="Descending"/>
+                <componentModel:SortDescription PropertyName="UserManagementPermission" Direction="Descending"/>
+                <componentModel:SortDescription PropertyName="ChatInfoPermission" Direction="Descending"/>
+                <componentModel:SortDescription PropertyName="AttachPermission" Direction="Descending"/>
+                <componentModel:SortDescription PropertyName="WritePermission" Direction="Descending"/>
+                <componentModel:SortDescription PropertyName="ReadPermission" Direction="Descending"/>
+                <componentModel:SortDescription PropertyName="Username" Direction="Ascending"/>
+            </CollectionViewSource.SortDescriptions>
+        </CollectionViewSource>
+    </UserControl.Resources>
     <StackPanel Orientation="Vertical">
         <Border Background="GhostWhite"  BorderBrush="Gainsboro" BorderThickness="1">
             <Grid>
@@ -19,7 +32,7 @@
                     <RowDefinition Height="5"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <Image Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" Width="60" Height="60">
+                <Image Margin="5,0,0,0" Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" Width="40" Height="40">
                     <Image.Source>
                         <Binding Path="Avatar">
                             <Binding.TargetNullValue>
@@ -28,11 +41,14 @@
                         </Binding>
                     </Image.Source>
                 </Image>
-                <Label Grid.Column="1" Grid.Row="0" Content="{Binding Path=Title}"/>
-                <Label Grid.Column="1" Grid.Row="2" Content="{Binding Path=UsersTotal}"/>
+                <TextBlock Grid.Column="1" Grid.Row="0" Margin="5,3,0,0" Text="{Binding Path=Title, Mode=OneWay}"/>
+                <TextBlock Grid.Column="1" Grid.Row="2" Margin="5,0,0,3"><Run Text="{Binding Path=UsersTotal, Mode=OneWay}"/> users</TextBlock>
             </Grid>
         </Border>
-        <DataGrid ItemsSource="{Binding Path=UsersInfo}" AutoGenerateColumns="False">
+        <DataGrid CanUserAddRows="False" CanUserReorderColumns="False" CanUserDeleteRows="False" 
+                  CanUserResizeColumns="False" CanUserResizeRows="False" CanUserSortColumns="False" 
+                  GridLinesVisibility="None" SelectionMode="Single" SelectionUnit="Cell" IsReadOnly="True"
+                  RowHeaderWidth="0" ItemsSource="{Binding Source={StaticResource UsersSorted}}" AutoGenerateColumns="False" Style="{DynamicResource DataGridStyle1}">
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header="C" Width="10" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
@@ -41,10 +57,10 @@
                                 <Image.Style>
                                     <Style TargetType="Image">
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Path=IsCreator}" Value="True">
+                                            <DataTrigger Binding="{Binding Path=IsCreator, Mode=OneWay}" Value="True">
                                                 <Setter Property="Source" Value="/Resources/star.png"></Setter>
                                             </DataTrigger>
-                                            <DataTrigger Binding="{Binding Path=IsCreator}" Value="True">
+                                            <DataTrigger Binding="{Binding Path=IsCreator, Mode=OneWay}" Value="False">
                                                 <Setter Property="Source" Value="/Resources/empty.png"></Setter>
                                             </DataTrigger>
                                         </Style.Triggers>
@@ -54,12 +70,12 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Username" IsReadOnly="True" Binding="{Binding Path=Username}"/>
-                <DataGridCheckBoxColumn Header="R" IsReadOnly="True" Binding="{Binding Path=ReadPermission}"/>
-                <DataGridCheckBoxColumn Header="W" IsReadOnly="True" Binding="{Binding Path=WritePermission}"/>
-                <DataGridCheckBoxColumn Header="A" IsReadOnly="True" Binding="{Binding Path=AttachPermission}"/>
-                <DataGridCheckBoxColumn Header="I" IsReadOnly="True" Binding="{Binding Path=ChatInfoPermission}"/>
-                <DataGridCheckBoxColumn Header="U" IsReadOnly="True" Binding="{Binding Path=UserManagementPermission}"/>
+                <DataGridTextColumn Header="Username" IsReadOnly="True" Binding="{Binding Path=Username, Mode=OneWay}"/>
+                <DataGridCheckBoxColumn Header="R" IsReadOnly="True" Binding="{Binding Path=ReadPermission, Mode=OneWay}"/>
+                <DataGridCheckBoxColumn Header="W" IsReadOnly="True" Binding="{Binding Path=WritePermission, Mode=OneWay}"/>
+                <DataGridCheckBoxColumn Header="A" IsReadOnly="True" Binding="{Binding Path=AttachPermission, Mode=OneWay}"/>
+                <DataGridCheckBoxColumn Header="I" IsReadOnly="True" Binding="{Binding Path=ChatInfoPermission, Mode=OneWay}"/>
+                <DataGridCheckBoxColumn Header="U" IsReadOnly="True" Binding="{Binding Path=UserManagementPermission, Mode=OneWay}"/>
             </DataGrid.Columns>
         </DataGrid>
     </StackPanel>

@@ -3,11 +3,68 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:DotNetMessenger.WPFClient.Views.Info"
              xmlns:info="clr-namespace:DotNetMessenger.WPFClient.ViewModels.Info"
+             xmlns:converters="clr-namespace:DotNetMessenger.WPFClient.Converters"
              mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="3" d:DataContext="{d:DesignInstance info:UserInfoViewModel}">
-    <Grid>
-            
-    </Grid>
+             d:DesignHeight="300" d:DesignWidth="300" d:DataContext="{d:DesignInstance info:UserInfoViewModel}">
+    <UserControl.Resources>
+        <converters:DateTimeToDateStringConverter x:Key="DateTimeToDateStringConverter" />
+    </UserControl.Resources>
+    <StackPanel Orientation="Vertical" Background="White" Width="220" Height="185" Margin="5">
+        <Border Background="GhostWhite"  BorderBrush="Gainsboro" BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="5"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Image Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" Width="60" Height="60">
+                    <Image.Source>
+                        <Binding Path="Avatar">
+                            <Binding.TargetNullValue>
+                                <ImageSource>/Resources/defaultAvatar.png</ImageSource>
+                            </Binding.TargetNullValue>
+                        </Binding>
+                    </Image.Source>
+                </Image>
+                <TextBlock Grid.Column="1" Grid.Row="0" Margin="5,0,0,0" Text="{Binding Path=Username, Mode=OneWay}"/>
+                <TextBlock Grid.Column="1" Grid.Row="2" Margin="5,0,0,0" ><Run Text="{Binding LastName, Mode=OneWay}"/> 
+                    <Run Text="{Binding FirstName, Mode=OneWay}"/></TextBlock>
+            </Grid>
+        </Border>
+        <TextBlock Margin="2">Last name: <Run>
+            <Run.Text>
+                <Binding Path="LastName" Mode="OneWay">
+                    <Binding.TargetNullValue>NaN</Binding.TargetNullValue>
+                </Binding>
+            </Run.Text>
+        </Run></TextBlock>
+        <TextBlock Margin="2">First name: <Run>
+            <Run.Text>
+                <Binding Path="FirstName" Mode="OneWay">
+                    <Binding.TargetNullValue>NaN</Binding.TargetNullValue>
+                </Binding>
+            </Run.Text>
+        </Run></TextBlock>
+        <TextBlock Margin="2">Gender: <Run Text="{Binding Path=Gender, Mode=OneWay}"/></TextBlock>
+        <TextBlock Margin="2">Date of Birth: <Run Text="{Binding Path=DateOfBirth, Mode=OneWay, Converter={StaticResource DateTimeToDateStringConverter}}"/></TextBlock>
+        <TextBlock Margin="2">E-mail: <Run>
+            <Run.Text>
+                <Binding Path="Email" Mode="OneWay">
+                    <Binding.TargetNullValue>NaN</Binding.TargetNullValue>
+                </Binding>
+            </Run.Text>
+        </Run></TextBlock>
+        <TextBlock Margin="2">Phone: <Run>
+            <Run.Text>
+                <Binding Path="Phone" Mode="OneWay">
+                    <Binding.TargetNullValue>NaN</Binding.TargetNullValue>
+                </Binding>
+            </Run.Text>
+        </Run></TextBlock>
+    </StackPanel>
 </UserControl>

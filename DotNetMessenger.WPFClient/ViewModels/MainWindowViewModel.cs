@@ -10,6 +10,7 @@ using DotNetMessenger.Model;
 using DotNetMessenger.RClient;
 using DotNetMessenger.WPFClient.Router;
 using DotNetMessenger.WPFClient.ViewModels.Entities;
+using DotNetMessenger.WPFClient.ViewModels.Info;
 
 namespace DotNetMessenger.WPFClient.ViewModels
 {
@@ -20,6 +21,7 @@ namespace DotNetMessenger.WPFClient.ViewModels
         private UserViewModel _currentUser;
         private SenderViewModel _senderViewModel;
         private ICommand _createGroupChatCommand;
+        private ICommand _setNewUserInfoCommand;
 
         public AllChatsViewModel AllChatsViewModel
         {
@@ -69,6 +71,20 @@ namespace DotNetMessenger.WPFClient.ViewModels
                                 .Where(u => u.Id != ClientApi.UserId))));
                 }
                 return _createGroupChatCommand;
+            }
+        }
+
+        public ICommand SetNewUserInfoCommand
+        {
+            get
+            {
+                if (_setNewUserInfoCommand == null)
+                {
+                    _setNewUserInfoCommand = new RelayCommand(x =>
+                        ViewHostBuilder.GetViewHost()
+                            .HostViewModal(new SetUserInfoViewModel(CurrentUser.CurrentUser)));
+                }
+                return _setNewUserInfoCommand;
             }
         }
 
