@@ -22,7 +22,7 @@
                     <RowDefinition Height="5"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <Image Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" Width="60" Height="60">
+                <Image Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" Style="{StaticResource AvatarStyle}">
                     <Image.Source>
                         <Binding Path="Avatar">
                             <Binding.TargetNullValue>

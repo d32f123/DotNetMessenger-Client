@@ -6,6 +6,7 @@ using System.Windows.Input;
 using com.google.i18n.phonenumbers;
 using DotNetMessenger.Model;
 using DotNetMessenger.Model.Enums;
+using DotNetMessenger.RClient;
 using DotNetMessenger.WPFClient.Validation;
 using java.lang;
 
@@ -44,6 +45,13 @@ namespace DotNetMessenger.WPFClient.ViewModels.Info
                 OnPropertyChanged(nameof(Username));
                 OnPropertyChanged(nameof(Avatar));
                 _userInfo = _user?.UserInfo ?? new UserInfo();
+                if (_userInfo.DateOfBirth == null) _userInfo.DateOfBirth = DateTime.Today.AddYears(-18);
+                OnPropertyChanged(nameof(FirstName));
+                OnPropertyChanged(nameof(LastName));
+                OnPropertyChanged(nameof(DateOfBirth));
+                OnPropertyChanged(nameof(Gender));
+                OnPropertyChanged(nameof(Phone));
+                OnPropertyChanged(nameof(Email));
             }
         }
 
@@ -74,7 +82,7 @@ namespace DotNetMessenger.WPFClient.ViewModels.Info
         }
         public DateTime DateOfBirth
         {
-            get => _userInfo?.DateOfBirth ?? DateTime.MinValue;
+            get => (DateTime)_userInfo.DateOfBirth;
             set
             {
                 if (Equals(_userInfo.DateOfBirth, value)) return;
@@ -227,7 +235,7 @@ namespace DotNetMessenger.WPFClient.ViewModels.Info
 #if DEBUG
             if (App.IsDesignMode) return;
 #endif
-            throw new NotImplementedException();
+            ClientApi.UsersClient.SetUserInfoAsync(_userInfo);
             CloseCommand.Execute(null);
         }
 

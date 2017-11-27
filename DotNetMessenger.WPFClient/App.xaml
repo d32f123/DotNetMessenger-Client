@@ -58,6 +58,12 @@
         <Style TargetType="{x:Type ContextMenu}">
             <Setter Property="ItemsPanel" Value="{StaticResource MenuItemPanelTemplate}"/>
         </Style>
+
+        <Style x:Key="AvatarStyle" TargetType="{x:Type Image}">
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Margin" Value="5,0,0,0"></Setter>
+        </Style>
         
         <!-- Transparent listview selection -->
         <Style x:Key="TransparentSelectionStyle" TargetType="{x:Type ListViewItem}">

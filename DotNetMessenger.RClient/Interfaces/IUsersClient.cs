@@ -13,7 +13,8 @@ namespace DotNetMessenger.RClient.Interfaces
         Task<User> GetUserAsync(int id);
         Task<User> GetUserByUsernameAsync(string username);
         Task<List<User>> GetAllUsersAsync();
-        Task<bool> DeleteUser(int id);
+        Task<bool> DeleteUserAsync(int id);
+        Task<bool> SetUserInfoAsync(UserInfo userInfo);
 
         event EventHandler<IEnumerable<User>> NewUsersEvent;
     }

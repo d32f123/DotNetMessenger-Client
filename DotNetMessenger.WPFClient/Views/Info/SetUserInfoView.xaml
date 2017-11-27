@@ -9,7 +9,7 @@
              xmlns:model="clr-namespace:DotNetMessenger.Model;assembly=DotNetMessenger.Model"
              xmlns:enums="clr-namespace:DotNetMessenger.Model.Enums;assembly=DotNetMessenger.Model"
              mc:Ignorable="d" 
-             d:DesignHeight="360" d:DesignWidth="300" d:DataContext="{d:DesignInstance info:SetUserInfoViewModel}">
+             d:DesignHeight="390" d:DesignWidth="300" d:DataContext="{d:DesignInstance info:SetUserInfoViewModel}">
     <UserControl.Resources>
         <Style x:Key="InputBox" TargetType="TextBox">
             <Setter Property="Width" Value="145"/>
@@ -30,7 +30,7 @@
                     <RowDefinition Height="5"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <Image Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" Width="60" Height="60">
+                <Image Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" Style="{StaticResource AvatarStyle}">
                     <Image.Source>
                         <Binding Path="Avatar">
                             <Binding.TargetNullValue>
@@ -72,14 +72,20 @@
             </DockPanel>
         </StackPanel>
         <DockPanel Margin="3">
+            <Label Content="Date of birth:"/>
+            <DatePicker SelectedDate="{Binding Path=DateOfBirth}"></DatePicker>
+        </DockPanel>
+        <DockPanel Margin="3">
             <Label DockPanel.Dock="Left" Content="Phone: "/>
-            <TextBox Name="PhoneBox" DockPanel.Dock="Right" Style="{StaticResource InputBox}" Text="{Binding Path=Phone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged,
+            <TextBox Name="PhoneBox" DockPanel.Dock="Right" Style="{StaticResource InputBox}" 
+                     Text="{Binding Path=Phone, Mode=TwoWay, UpdateSourceTrigger=LostFocus,
                 ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
         </DockPanel>
         <ContentPresenter Content="{Binding ElementName=PhoneBox, Path=(Validation.Errors).CurrentItem}"/>
         <DockPanel Margin="3">
             <Label DockPanel.Dock="Left" Content="E-mail: "/>
-            <TextBox Name="EmailBox" DockPanel.Dock="Right" Style="{StaticResource InputBox}" Text="{Binding Path=Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged,
+            <TextBox Name="EmailBox" DockPanel.Dock="Right" Style="{StaticResource InputBox}" 
+                     Text="{Binding Path=Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged,
                 ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
         </DockPanel>
         <ContentPresenter Content="{Binding ElementName=EmailBox, Path=(Validation.Errors).CurrentItem}"/>

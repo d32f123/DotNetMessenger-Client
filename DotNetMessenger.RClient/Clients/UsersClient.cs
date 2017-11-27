@@ -16,6 +16,7 @@ namespace DotNetMessenger.RClient.Clients
         private readonly HttpClient _client;
         private int _userId = -1;
         private readonly NewUserPoller _poller;
+
         public event EventHandler<IEnumerable<User>> NewUsersEvent;
 
         private readonly CacheStorage<int, User> _userCache = new CacheStorage<int, User>(100);
@@ -114,11 +115,22 @@ namespace DotNetMessenger.RClient.Clients
             return null;
         }
 
-        public async Task<bool> DeleteUser(int id)
+        public async Task<bool> DeleteUserAsync(int id)
         {
             if (_userCache.ContainsKey(id)) _userCache.Remove(id);
 
             return (await _client.DeleteAsync($"users/{id}").ConfigureAwait(false)).IsSuccessStatusCode;
+        }
+
+        public async Task<bool> SetUserInfoAsync(UserInfo userInfo)
+        {
+            var response = await _client.PutAsJsonAsync($"users/{UserId}/userinfo", userInfo);
+
+            if (response.IsSuccessStatusCode && _userCache.ContainsKey(UserId))
+                _userCache[UserId].UserInfo = userInfo;
+
+            return response.IsSuccessStatusCode;
+
         }
 
         public void Dispose()
