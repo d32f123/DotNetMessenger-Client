@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNetMessenger.Model;
+using DotNetMessenger.RClient.Extensions;
 using DotNetMessenger.RClient.Interfaces;
 using DotNetMessenger.RClient.LongPollers;
 using DotNetMessenger.RClient.Storages;
@@ -19,25 +20,36 @@ namespace DotNetMessenger.RClient.Clients
         private readonly IUsersClient _usersClient;
         private int UserId => _usersClient.UserId;
 
-        private readonly NewMessagePoller _messagePoller;
-        private readonly Dictionary<int, EventHandler<IEnumerable<Message>>> _newChatMessageEvents =
-            new Dictionary<int, EventHandler<IEnumerable<Message>>>();
+        private readonly object _lock = new object();
+        private NewEventsPoller _poller;
+        public NewEventsPoller Poller
+        {
+            set
+            {
+                lock (_lock)
+                {
+                    if (_poller == value) return;
+                    if (_poller != null)
+                        _poller.NewMessagesEvent -= NewMessagesHandler;
+
+                    _poller = value;
+                    _poller.NewMessagesEvent += NewMessagesHandler;
+                }
+            }
+        }
 
         private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
-        private readonly SemaphoreSlim _newMessagesSemaphore = new SemaphoreSlim(1, 1);
         private readonly CacheStorage<int, List<Message>> _messageCache = new CacheStorage<int, List<Message>>(10);
 
         public MessagesClient(string connectionString, Guid token, IUsersClient usersClient)
         {
-            var token1 = token;
             _usersClient = usersClient;
 
             _client = new HttpClient { BaseAddress = new Uri(connectionString) };
             _client.DefaultRequestHeaders.Accept.Clear();
             _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", $"{token1}:".ToBase64String());
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", $"{token}:".ToBase64String());
 
-            _messagePoller = new NewMessagePoller(connectionString, token1, null, NewMessagesHandler);
         }
 
         public async Task<Message> GetMessage(int id)
@@ -53,7 +65,6 @@ namespace DotNetMessenger.RClient.Clients
         public async Task<IEnumerable<Message>> GetChatMessagesAsync(int id)
         {
             await _semaphore.WaitAsync();
-            await _newMessagesSemaphore.WaitAsync();
             try
             {
                 if (_messageCache.ContainsKey(id))
@@ -79,7 +90,6 @@ namespace DotNetMessenger.RClient.Clients
             finally
             {
                 _semaphore.Release();
-                _newMessagesSemaphore.Release();
             }
         }
 
@@ -97,23 +107,19 @@ namespace DotNetMessenger.RClient.Clients
             DateTime? dateTo)
         {
             await _semaphore.WaitAsync();
-            await _newMessagesSemaphore.WaitAsync();
             try
             {
                 if (!_messageCache.ContainsKey(chatId))
                 {
                     _semaphore.Release();
-                    _newMessagesSemaphore.Release();
                     // this call should put the messages in cache
                     await GetChatMessagesAsync(chatId);
                     await _semaphore.WaitAsync();
-                    await _newMessagesSemaphore.WaitAsync();
                 }
                 // if for some reason we still don't have the messages in cache, just ask the server
                 if (!_messageCache.ContainsKey(chatId))
                 {
                     _semaphore.Release();
-                    _newMessagesSemaphore.Release();
 
                     var response = await _client
                         .PutAsJsonAsync($"messages/chats/{chatId}/bydate",
@@ -130,7 +136,6 @@ namespace DotNetMessenger.RClient.Clients
                 var cached = _messageCache[chatId].Where(x =>
                     x.Date >= (dateFrom ?? DateTime.MinValue) && x.Date <= (dateTo ?? DateTime.MaxValue));
                 _semaphore.Release();
-                _newMessagesSemaphore.Release();
                 return cached;
             }
             catch (Exception e)
@@ -143,23 +148,19 @@ namespace DotNetMessenger.RClient.Clients
         public async Task<IEnumerable<Message>> GetChatMessagesFromAsync(int chatId, int messageId)
         {
             await _semaphore.WaitAsync();
-            await _newMessagesSemaphore.WaitAsync();
             try
             {
                 if (!_messageCache.ContainsKey(chatId))
                 {
                     _semaphore.Release();
-                    _newMessagesSemaphore.Release();
                     // this call should put the messages in cache
                     await GetChatMessagesAsync(chatId);
                     await _semaphore.WaitAsync();
-                    await _newMessagesSemaphore.WaitAsync();
                 }
                 // if for some reason we still don't have the messages in cache, just ask the server
                 if (!_messageCache.ContainsKey(chatId))
                 {
                     _semaphore.Release();
-                    _newMessagesSemaphore.Release();
                     var response = await _client.GetAsync($"messages/chats/{chatId}/from/{messageId}")
                         .ConfigureAwait(false);
                     if (!response.IsSuccessStatusCode) return null;
@@ -169,7 +170,6 @@ namespace DotNetMessenger.RClient.Clients
                 _messageCache[chatId].RemoveAll(x => x.ExpirationDate != null && x.ExpirationDate < DateTime.Now);
                 var cached = _messageCache[chatId].Where(x => x.Id > messageId);
                 _semaphore.Release();
-                _newMessagesSemaphore.Release();
                 return cached;  
             }
             catch (Exception e)
@@ -182,7 +182,6 @@ namespace DotNetMessenger.RClient.Clients
         public async Task<Message> GetLatestChatMessageAsync(int id)
         {
             await _semaphore.WaitAsync();
-            await _newMessagesSemaphore.WaitAsync();
             try
             {
                 if (_messageCache.ContainsKey(id))
@@ -190,11 +189,9 @@ namespace DotNetMessenger.RClient.Clients
                     _messageCache[id].RemoveAll(x => x.ExpirationDate != null && x.ExpirationDate < DateTime.Now);
                     var cached = _messageCache[id].LastOrDefault();
                     _semaphore.Release();
-                    _newMessagesSemaphore.Release();
                     return cached;
                 }
                 _semaphore.Release();
-                _newMessagesSemaphore.Release();
 
                 var response = await _client.GetAsync($"messages/{id}/last").ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode) return null;
@@ -211,13 +208,9 @@ namespace DotNetMessenger.RClient.Clients
         public async Task SendMessageAsync(int chatId, Message message)
         {
             await _semaphore.WaitAsync();
-            lock (_newChatMessageEvents)
-            {
-                if (_newChatMessageEvents.ContainsKey(chatId))
-                {
-                    Task.Run(() => _newChatMessageEvents[chatId]?.Invoke(this, new[] { message }));
-                }
-            }
+
+            Task.Run(() => _poller.SendNewMessagesEvent(chatId, new[] {message}));
+
             var response = await _client.PostAsJsonAsync($"messages/{chatId}/{UserId}", message).ConfigureAwait(false);
             if (response.IsSuccessStatusCode)
             {
@@ -234,45 +227,25 @@ namespace DotNetMessenger.RClient.Clients
             _semaphore.Release();
             OnNewMessagesParseStart -= ParseHandler;
         }
+
         private event EventHandler OnNewMessagesParseStart;
-        
+
         private void NewMessagesHandler(object sender, IEnumerable<Message> enumerable)
         {
-            var toBeInvoked = new List<Message>();
-
-            var lastChatId = -1;
-            _newMessagesSemaphore.Wait();
             OnNewMessagesParseStart?.Invoke(this, EventArgs.Empty);
-            foreach (var msg in enumerable)
+            lock (_messageCache)
             {
-                if (lastChatId != msg.Id)
+                var messages = enumerable as List<Message> ?? enumerable.ToList();
+                var chatId = messages.First().ChatId;
+                if (!_messageCache.ContainsKey(chatId))
                 {
-                    lock (_newChatMessageEvents)
-                    {
-                        if (lastChatId != -1 && _messageCache.ContainsKey(lastChatId))
-                            _messageCache[lastChatId].AddRange(toBeInvoked);
-                        if (lastChatId != -1 && _newChatMessageEvents.ContainsKey(lastChatId))
-                        {
-                            if (toBeInvoked.Any(x => x.SenderId != UserId))
-                                _newChatMessageEvents[lastChatId]?.Invoke(this, toBeInvoked.Where(x => x.SenderId != UserId));
-                        }
-                    }
-                    lastChatId = msg.ChatId;
-                    toBeInvoked = new List<Message>();
+                    _messageCache.Add(chatId, messages);
                 }
-                toBeInvoked.Add(msg);
-            }
-            lock (_newChatMessageEvents)
-            {
-                if (lastChatId != -1 && _messageCache.ContainsKey(lastChatId))
-                    _messageCache[lastChatId].AddRange(toBeInvoked);
-                if (lastChatId != -1 && _newChatMessageEvents.ContainsKey(lastChatId))
+                else
                 {
-                    if (toBeInvoked.Any(x => x.SenderId != UserId))
-                        _newChatMessageEvents[lastChatId]?.Invoke(this, toBeInvoked.Where(x => x.SenderId != UserId));
+                    _messageCache[chatId].AddRange(messages);
                 }
             }
-            _newMessagesSemaphore.Release();
         }
 
         public void SubscribeToChat(int chatId, int lastMessageId, EventHandler<IEnumerable<Message>> newMessagesHandler)
@@ -284,32 +257,13 @@ namespace DotNetMessenger.RClient.Clients
                     newMessagesHandler?.Invoke(this, messages);
             });
 
-            lock (_newChatMessageEvents)
-            {
-                // if no subscription yet, create it
-                if (!_newChatMessageEvents.ContainsKey(chatId))
-                {
-                    _newChatMessageEvents.Add(chatId, newMessagesHandler);
-                    _messagePoller.AddChat(chatId);
-                }
-                else
-                {
-                    _newChatMessageEvents[chatId] += newMessagesHandler;
-                }
-            }
+
+            _poller.SubscribeToNewChatMessages(chatId, newMessagesHandler);
         }
 
         public void UnsubscribeFromChat(int chatId, EventHandler<IEnumerable<Message>> handler)
         {
-            lock (_newChatMessageEvents)
-            {
-                if (!_newChatMessageEvents.ContainsKey(chatId))
-                    throw new ArgumentException("No such subscription!");
-                _newChatMessageEvents[chatId] -= handler;
-                if (_newChatMessageEvents[chatId] != null && _newChatMessageEvents[chatId].GetInvocationList().Any()) return;
-                _messagePoller.RemoveChat(chatId);
-                _newChatMessageEvents.Remove(chatId);
-            }
+                _poller.UnsubscribeFromNewChatMessages(chatId, handler);
         }
 
         private class DateRange
@@ -322,7 +276,6 @@ namespace DotNetMessenger.RClient.Clients
         {
             _client?.Dispose();
             _usersClient?.Dispose();
-            _messagePoller?.Dispose();
         }
     }
 }

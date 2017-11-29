@@ -41,7 +41,7 @@ namespace DotNetMessenger.WPFClient.ViewModels
             Task.Run(async () =>
             {
                 await AddNewUsers(await ClientApi.UsersClient.GetAllUsersAsync());
-                await AddNewChats(
+               await AddNewChats(
                     (await ClientApi.ChatsClient.GetUserChatsAsync()).Where(x => x.ChatType == ChatTypes.GroupChat));
                 ClientApi.UsersClient.NewUsersEvent += UsersClientOnNewUsersEvent;
                 ClientApi.ChatsClient.NewChatsEvent += ChatsClientOnNewChatsEvent;

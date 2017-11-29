@@ -1,14 +1,12 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
-using System.Windows.Controls;
 using System.Windows.Input;
 using com.google.i18n.phonenumbers;
 using DotNetMessenger.Model;
 using DotNetMessenger.Model.Enums;
 using DotNetMessenger.RClient;
-using DotNetMessenger.WPFClient.Validation;
-using java.lang;
 
 namespace DotNetMessenger.WPFClient.ViewModels.Info
 {
@@ -16,8 +14,6 @@ namespace DotNetMessenger.WPFClient.ViewModels.Info
     {
         // do not touch ( this value is auto-generated )
         private const string EmailRegexString = @"[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?";
-
-        private readonly ValidationErrorContainer _errorContainer = new ValidationErrorContainer();
 
         private ICommand _saveCommand;
 
@@ -82,7 +78,11 @@ namespace DotNetMessenger.WPFClient.ViewModels.Info
         }
         public DateTime DateOfBirth
         {
-            get => (DateTime)_userInfo.DateOfBirth;
+            get
+            {
+                Debug.Assert(_userInfo.DateOfBirth != null, "_userInfo.DateOfBirth != null");
+                return (DateTime) _userInfo.DateOfBirth;
+            }
             set
             {
                 if (Equals(_userInfo.DateOfBirth, value)) return;
@@ -90,6 +90,7 @@ namespace DotNetMessenger.WPFClient.ViewModels.Info
                 OnPropertyChanged(nameof(DateOfBirth));
             }
         }
+
         public Genders Gender
         {
             get => _userInfo.Gender ?? Genders.Unknown;
@@ -125,36 +126,6 @@ namespace DotNetMessenger.WPFClient.ViewModels.Info
         public SetUserInfoViewModel(User user)
         {
             User = user;
-        }
-
-        private void OnErrorsChanged(object sender, DataErrorsChangedEventArgs dataErrorsChangedEventArgs)
-        {
-            OnPropertyChanged("CurrentValidationError");
-        }
-
-        public virtual ValidationCustomError CurrentValidationError
-        {
-            get
-            {
-                if (_errorContainer.ErrorCount == 0)
-                    return null;
-
-                // Get the error list associated with the last property to be validated.
-                using (var p = _errorContainer.Errors[_errorContainer.LastPropertyValidated].GetEnumerator())
-                {
-
-                    // Decide which error needs to be returned.
-                    ValidationCustomError error = null;
-                    while (p.MoveNext())
-                    {
-                        error = p.Current;
-                        if (error == null) continue;
-                        if (error.Id == nameof(ExceptionValidationRule))
-                            break;
-                    }
-                    return error;
-                }
-            }
         }
 
         public string this[string propName]

@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
+using DotNetMessenger.RClient.Extensions;
 
 namespace DotNetMessenger.RClient.LongPollers
 {
@@ -65,7 +66,7 @@ namespace DotNetMessenger.RClient.LongPollers
                 {
                     response = await _client.SendAsync(Request).ConfigureAwait(false);
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
                     response = null;
                 }

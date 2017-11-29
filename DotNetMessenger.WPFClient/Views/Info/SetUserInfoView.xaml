@@ -3,10 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:DotNetMessenger.WPFClient.Views.Info"
              xmlns:info="clr-namespace:DotNetMessenger.WPFClient.ViewModels.Info"
              xmlns:converters="clr-namespace:DotNetMessenger.WPFClient.Converters"
-             xmlns:model="clr-namespace:DotNetMessenger.Model;assembly=DotNetMessenger.Model"
              xmlns:enums="clr-namespace:DotNetMessenger.Model.Enums;assembly=DotNetMessenger.Model"
              mc:Ignorable="d" 
              d:DesignHeight="390" d:DesignWidth="300" d:DataContext="{d:DesignInstance info:SetUserInfoViewModel}">

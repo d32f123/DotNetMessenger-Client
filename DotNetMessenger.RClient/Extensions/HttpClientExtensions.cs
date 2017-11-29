@@ -4,7 +4,7 @@ using System.Text;
 using System.Web;
 using System.Web.Script.Serialization;
 
-namespace DotNetMessenger.RClient
+namespace DotNetMessenger.RClient.Extensions
 {
     public static class HttpClientExtensions
     {

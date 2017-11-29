@@ -16,6 +16,9 @@ namespace DotNetMessenger.RClient.Interfaces
         Task<bool> DeleteUserAsync(int id);
         Task<bool> SetUserInfoAsync(UserInfo userInfo);
 
+        void SubscribeToNewUserInfo(int userId, EventHandler<User> handler);
+        void UnsubscribeFromNewUserInfo(int userId, EventHandler<User> handler);
+
         event EventHandler<IEnumerable<User>> NewUsersEvent;
     }
 }

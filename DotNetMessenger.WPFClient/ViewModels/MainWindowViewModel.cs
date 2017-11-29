@@ -17,7 +17,7 @@ namespace DotNetMessenger.WPFClient.ViewModels
     public class MainWindowViewModel : ViewModelBase
     {
         private AllChatsViewModel _allChatsViewModel;
-        private int _currentChat;
+        private int _currentChat = -1;
         private UserViewModel _currentUser;
         private SenderViewModel _senderViewModel;
         private ICommand _createGroupChatCommand;
@@ -43,7 +43,7 @@ namespace DotNetMessenger.WPFClient.ViewModels
             set
             {
                 if (_currentUser == value) return;
-                _currentUser = value;
+                _currentUser = new UserViewModel(value.CurrentUser);
                 OnPropertyChanged(nameof(CurrentUser));
             }
         }

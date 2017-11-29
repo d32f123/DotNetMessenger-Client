@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using DotNetMessenger.Model;
+using DotNetMessenger.RClient;
 using DotNetMessenger.WPFClient.Router;
 using DotNetMessenger.WPFClient.ViewModels.Info;
 
 namespace DotNetMessenger.WPFClient.ViewModels.Entities
 {
-    public class ChatViewModel : EntityViewModel
+    public class ChatViewModel : EntityViewModel, IDisposable
     {
         private Chat _currentChat;
         public Chat CurrentChat
@@ -15,6 +16,14 @@ namespace DotNetMessenger.WPFClient.ViewModels.Entities
             set
             {
                 if (value == _currentChat) return;
+                if (_currentChat?.Id != value?.Id && _currentChat != null)
+                {
+                    ClientApi.ChatsClient.UnsubscribeFromNewChatInfo(_currentChat.Id, NewChatInfoHandler);
+                }
+                if (value != null)
+                {
+                    ClientApi.ChatsClient.SubscribeToNewChatInfo(value.Id, NewChatInfoHandler);
+                }
                 _currentChat = value;
                 OnPropertyChanged(nameof(CurrentChat));
                 OnPropertyChanged(nameof(MainString));
@@ -33,7 +42,12 @@ namespace DotNetMessenger.WPFClient.ViewModels.Entities
             {
                 new ContextAction {Name = "Info", Action = new RelayCommand(ShowInfoViewModel)}
             };
-            _currentChat = currentChat;
+            CurrentChat = currentChat;
+        }
+
+        private void NewChatInfoHandler(object sender, Chat chat)
+        {
+            CurrentChat = chat;
         }
 
         public override string MainString => _currentChat.Info?.Title ?? _currentChat.Id.ToString();
@@ -47,6 +61,15 @@ namespace DotNetMessenger.WPFClient.ViewModels.Entities
         private void ShowInfoViewModel(object o)
         {
             ViewHostBuilder.GetViewHost().HostView(new ChatInfoViewModel(_currentChat));
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                ClientApi.ChatsClient.UnsubscribeFromNewChatInfo(_currentChat.Id, NewChatInfoHandler);
+            }
+            catch { }
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace DotNetMessenger.RClient
+namespace DotNetMessenger.RClient.Extensions
 {
     internal static class Base64Extensions
     {

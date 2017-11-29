@@ -6,7 +6,9 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using DotNetMessenger.Model;
 using DotNetMessenger.RClient.Clients;
+using DotNetMessenger.RClient.Extensions;
 using DotNetMessenger.RClient.Interfaces;
+using DotNetMessenger.RClient.LongPollers;
 
 namespace DotNetMessenger.RClient
 {
@@ -15,6 +17,8 @@ namespace DotNetMessenger.RClient
         private const string ConnectionString = @"http://localhost:58302/api/";
         private static readonly HttpClient Client;
         private static Guid _token = Guid.Empty;
+
+        private static NewEventsPoller _poller;
 
         private static readonly object UsersLock = new object();
         private static bool _usersCreated;
@@ -113,6 +117,13 @@ namespace DotNetMessenger.RClient
                 if (response.IsSuccessStatusCode)
                 {
                     _token = Guid.Parse(new string(retString.Where(c => c != '"').ToArray()));
+
+
+
+                    _poller = new NewEventsPoller(ConnectionString, _token, UsersClient, ChatsClient);
+                    _usersClient.Poller = _poller;
+                    _chatsClient.Poller = _poller;
+                    ((MessagesClient) MessagesClient).Poller = _poller;
                     return true;
                 }
                 _token = Guid.Empty;
@@ -152,6 +163,9 @@ namespace DotNetMessenger.RClient
                 _messagesClient = null;
                 _messagesCreated = false;
             }
+
+            _poller?.Dispose();
+            _poller = null;
         }
     }
 }

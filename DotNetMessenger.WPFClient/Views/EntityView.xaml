@@ -26,12 +26,12 @@
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="2"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         
-        <Image Grid.Column="0" Grid.RowSpan="3" Width="40" Height="40">
+        <Image Grid.Column="0" Grid.RowSpan="3" Style="{StaticResource AvatarStyle}">
             <Image.Source>
                 <Binding Path="Image">
                     <Binding.TargetNullValue>

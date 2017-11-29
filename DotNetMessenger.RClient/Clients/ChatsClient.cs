@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using DotNetMessenger.Model;
 using DotNetMessenger.Model.Enums;
+using DotNetMessenger.RClient.Classes;
+using DotNetMessenger.RClient.Extensions;
 using DotNetMessenger.RClient.Interfaces;
 using DotNetMessenger.RClient.LongPollers;
 using DotNetMessenger.RClient.Storages;
@@ -18,40 +21,28 @@ namespace DotNetMessenger.RClient.Clients
         private readonly IUsersClient _usersClient;
         private int UserId => _usersClient.UserId;
 
-        private readonly NewChatPoller _chatPoller;
-        public event EventHandler<IEnumerable<Chat>> NewChatsEvent;
+        private readonly object _lock = new object();
+        private NewEventsPoller _poller;
 
-        private readonly CacheStorage<int, Chat> _chatCache = new CacheStorage<int, Chat>(100);
-        private readonly CacheStorage<int, int> _dialogCache = new CacheStorage<int, int>(50);
-        private readonly CacheStorage<ChatUserIds, ChatUserInfo> _infoCache =
-            new CacheStorage<ChatUserIds, ChatUserInfo>(100);
-        private int _chatsTotal;
-
-        private class ChatUserIds
+        public NewEventsPoller Poller
         {
-            public readonly int UserId;
-            public readonly int ChatId;
-
-            public ChatUserIds(int userId, int chatId)
+            set
             {
-                UserId = userId;
-                ChatId = chatId;
-            }
-
-            public override bool Equals(object obj)
-            {
-                if (!(obj is ChatUserIds other)) return false;
-                return other.UserId == UserId && other.ChatId == ChatId;
-            }
-
-            public override int GetHashCode()
-            {
-                unchecked
+                lock (_lock)
                 {
-                    return (UserId * 397) ^ ChatId;
+                    if (_poller == value) return;
+                    if (_poller != null)
+                        _poller.NewChatsEvent -= NewChatsEvent;
+
+                    _poller = value;
+                    _poller.NewChatsEvent += NewChatsEvent;
                 }
             }
         }
+
+        public event EventHandler<IEnumerable<Chat>> NewChatsEvent;
+
+        private readonly CacheStorage<int, int> _dialogCache = new CacheStorage<int, int>(50);
 
         public ChatsClient(string connectionString, Guid token, IUsersClient usersClient)
         {
@@ -61,64 +52,38 @@ namespace DotNetMessenger.RClient.Clients
             _client.DefaultRequestHeaders.Accept.Clear();
             _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", $"{token}:".ToBase64String());
-
-            _chatsTotal = -1;
-            var chats = GetUserChatsAsync().Result;
-           
-
-            _chatCache.AddRange(chats.Select(x => new KeyValuePair<int, Chat>(x.Id, x)));
-            foreach (var chat in chats.Where(x => x.ChatType == ChatTypes.Dialog))
-            {
-                var users = chat.Users.ToArray();
-                var otherUser = users.Length == 1 ? users[0] : users.Single(x => x != UserId);
-                _dialogCache.Add(otherUser, chat.Id);
-            }
-            _chatsTotal = chats.Count;
-
-            NewChatsEvent += OnNewChatsEvent;
-
-            _chatPoller = new NewChatPoller(connectionString, token, -1, (_, e) => NewChatsEvent?.Invoke(this, e));
-        }
-
-        private void OnNewChatsEvent(object sender, IEnumerable<Chat> enumerable)
-        {
-            var chats = enumerable as Chat[] ?? enumerable.ToArray();
-            _chatsTotal += chats.Length;
-            _chatCache.AddRange(chats.Select(x => new KeyValuePair<int, Chat>(x.Id, x)));
-
-            foreach (var chat in chats.Where(x => x.ChatType == ChatTypes.Dialog))
-            {
-                var users = chat.Users.ToArray();
-                var otherUser = users.Length == 1 ? users[0] : users.Single(x => x != UserId);
-                _dialogCache.Add(otherUser, chat.Id);
-            }
-
         }
 
         public async Task<List<Chat>> GetUserChatsAsync()
         {
-            if (_chatsTotal == _chatCache.Count)
-            {
-                var chatsCached = _chatCache.Values;
-                return chatsCached as List<Chat> ?? chatsCached.ToList();
-            }
+            lock (_lock)
+                if (_poller != null)
+                    if (_poller.AreChatsPolled)
+                    {
+                        var chatsCached = _poller.ChatsStorage.Values.Select(x => x);
+                        return chatsCached as List<Chat> ?? chatsCached.ToList();
+                    }
 
             var response = await _client.GetAsync($"users/{UserId}/chats").ConfigureAwait(false);
             if (!response.IsSuccessStatusCode) return null;
 
-            return await response.Content.ReadAsAsync<List<Chat>>();
+            var chats = await response.Content.ReadAsAsync<List<Chat>>();
+
+            return chats;
         }
 
         public async Task<Chat> GetChatAsync(int chatId)
         {
-            if (_chatCache.ContainsKey(chatId)) return _chatCache[chatId];
+            lock (_lock)
+                if (_poller != null)
+                    if (_poller.ChatsStorage.ContainsKey(chatId))
+                        return _poller.ChatsStorage[chatId];
 
             var response = await _client.GetAsync($"chats/{chatId}").ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode) return null;
 
             var ret = await response.Content.ReadAsAsync<Chat>();
-            _chatCache.Add(chatId, ret);
             return ret;
         }
 
@@ -127,15 +92,18 @@ namespace DotNetMessenger.RClient.Clients
             if (_dialogCache.ContainsKey(otherId))
             {
                 var chatId = _dialogCache[otherId];
-                if (_chatCache.ContainsKey(chatId)) return _chatCache[chatId];
+                lock (_lock)
+                    if (_poller != null)
+                        lock (_poller.ChatsStorage)
+                            if (_poller.ChatsStorage.ContainsKey(chatId)) return _poller.ChatsStorage[chatId];
             }
 
             var response = await _client.GetAsync($"chats/dialog/{UserId}/{otherId}").ConfigureAwait(false);
             if (response.IsSuccessStatusCode)
             {
                 var ret = await response.Content.ReadAsAsync<Chat>();
-                _chatCache.Add(ret.Id, ret);
-                _dialogCache.Add(otherId, ret.Id);
+                if (!_dialogCache.ContainsKey(otherId))
+                    _dialogCache.Add(otherId, ret.Id);
                 return ret;
             }
             return null;
@@ -148,15 +116,23 @@ namespace DotNetMessenger.RClient.Clients
 
         public async Task<ChatUserInfo> GetChatSpecificUserinfoAsync(int chatId, int userId)
         {
-            var chatUserId = new ChatUserIds(userId, chatId);
-            if (_infoCache.ContainsKey(chatUserId)) return _infoCache[chatUserId];
+            var chatUserId = new ChatUserId(userId, chatId);
+            lock (_lock)
+                if (_poller != null)
+                    lock (_poller.ChatUserInfosCache)
+                        if (_poller.ChatUserInfosCache.ContainsKey(chatUserId))
+                            return _poller.ChatUserInfosCache[chatUserId];
 
             var response = await _client.GetAsync($"chats/{chatId}/users/{userId}/info").ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode) return null;
 
             var ret = await response.Content.ReadAsAsync<ChatUserInfo>();
-            _infoCache.Add(chatUserId, ret);
+            lock (_lock)
+                if (_poller != null)
+                    lock (_poller.ChatUserInfosCache)
+                        if (!_poller.ChatUserInfosCache.ContainsKey(chatUserId))
+                            _poller.ChatUserInfosCache.Add(chatUserId, ret);
             return ret;
         }
 
@@ -181,10 +157,62 @@ namespace DotNetMessenger.RClient.Clients
             public IEnumerable<int> Members { get; set; }
         }
 
+        public void SubscribeToNewChatInfo(int chatId, EventHandler<Chat> handler)
+        {
+            lock (_lock)
+                if (_poller == null)
+                {
+                    Trace.WriteLine("COULD NOT SUBSCRIBE BECUASE POLLER WAS NOT STARTED");
+                }
+                else
+                {
+                    _poller.SubscribeToNewChatInfo(chatId, handler);
+                }
+        }
+
+        public void UnsubscribeFromNewChatInfo(int chatId, EventHandler<Chat> handler)
+        {
+            lock (_lock)
+            {
+                _poller?.UnsubscribeFromNewChatInfo(chatId, handler);
+            }
+        }
+
+        public void SubscribeToNewChatUserInfo(int chatId, int userId, EventHandler<ChatUserInfo> handler)
+        {
+            lock (_lock)
+            {
+                _poller.SubscribeToNewChatUserInfo(chatId, userId, handler);
+            }
+        }
+
+        public void UnsubscribeFromNewChatUserInfo(int chatId, int userId, EventHandler<ChatUserInfo> handler)
+        {
+            lock (_lock)
+            {
+                _poller.UnsubscribeFromNewChatUserInfo(chatId, userId, handler);
+            }
+        }
+
+        public void SubscribeToNewChatMembers(int chatId, EventHandler<IEnumerable<int>> handler)
+        {
+            lock (_lock)
+            {
+                _poller.SubscribeToNewChatMembers(chatId, handler);
+            }
+        }
+
+        public void UnsubscribeFromNewChatMembers(int chatId, EventHandler<IEnumerable<int>> handler)
+        {
+            lock (_lock)
+            {
+                _poller.UnsubscribeFromNewChatMembers(chatId, handler);
+            }
+        }
+
         public void Dispose()
         {
             _client?.Dispose();
-            _chatPoller?.Dispose();
         }
     }
 }

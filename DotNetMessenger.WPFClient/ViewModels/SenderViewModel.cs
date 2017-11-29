@@ -28,7 +28,11 @@ namespace DotNetMessenger.WPFClient.ViewModels
             get => _chat;
             set
             {
-                if (_chat?.Id == value?.Id) return;
+                if (Equals(_chat, value)) return;
+                if (_chat?.ChatType == ChatTypes.Dialog)
+                {
+                    ClientApi.ChatsClient.UnsubscribeFromNewChatUserInfo(_chat.Id, ClientApi.UserId, NewChatUserInfo);
+                }
                 _chat = value;
                 MessageText = string.Empty;
                 Attachment = null;
@@ -41,16 +45,27 @@ namespace DotNetMessenger.WPFClient.ViewModels
                 if (App.IsDesignMode) return;
 #endif
                 if (_chat.ChatType == ChatTypes.Dialog)
+                {
                     _permissions = RolePermissions.WritePerm | RolePermissions.AttachPerm;
+                }
                 else
+                {
+                    ClientApi.ChatsClient.SubscribeToNewChatUserInfo(_chat.Id, ClientApi.UserId, NewChatUserInfo);
                     Application.Current.Dispatcher.Invoke(async () =>
                     {
                         _permissions = (await ClientApi.ChatsClient.GetChatUserInfoAsync(_chat.Id)).Role
-                                .RolePermissions;
+                            .RolePermissions;
                         OnPropertyChanged(nameof(Permissions));
                     });
+                }
                 OnPropertyChanged(nameof(Chat));
             }
+        }
+
+        private void NewChatUserInfo(object sender, ChatUserInfo chatUserInfo)
+        {
+            _permissions = chatUserInfo.Role.RolePermissions;
+            OnPropertyChanged(nameof(Permissions));
         }
 
         public RolePermissions Permissions => _permissions;

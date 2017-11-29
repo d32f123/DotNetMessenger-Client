@@ -76,19 +76,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Base64Extensions.cs" />
+    <Compile Include="Extensions\Base64Extensions.cs" />
+    <Compile Include="Classes\ChatUserId.cs" />
+    <Compile Include="Classes\ClientServerInteractions.cs" />
     <Compile Include="ClientApi.cs" />
     <Compile Include="Clients\ChatsClient.cs" />
     <Compile Include="Clients\MessagesClient.cs" />
     <Compile Include="Clients\UsersClient.cs" />
-    <Compile Include="HttpClientExtensions.cs" />
+    <Compile Include="Extensions\CloneExtension.cs" />
+    <Compile Include="Extensions\HttpClientExtensions.cs" />
     <Compile Include="Interfaces\IChatsClient.cs" />
     <Compile Include="Interfaces\IMessagesClient.cs" />
     <Compile Include="Interfaces\IUsersClient.cs" />
     <Compile Include="LongPollers\LongPoller.cs" />
-    <Compile Include="LongPollers\NewChatPoller.cs" />
-    <Compile Include="LongPollers\NewMessagePoller.cs" />
-    <Compile Include="LongPollers\NewUserPoller.cs" />
+    <Compile Include="LongPollers\NewEventsPoller.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Storages\CacheStorage.cs" />
   </ItemGroup>
