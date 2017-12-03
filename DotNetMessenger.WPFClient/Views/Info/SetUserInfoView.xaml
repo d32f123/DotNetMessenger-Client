@@ -30,7 +30,7 @@
                 </Grid.RowDefinitions>
                 <Image Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" Style="{StaticResource AvatarStyle}">
                     <Image.Source>
-                        <Binding Path="Avatar">
+                        <Binding Path="CurrentAvatar">
                             <Binding.TargetNullValue>
                                 <ImageSource>/Resources/defaultAvatar.png</ImageSource>
                             </Binding.TargetNullValue>
@@ -42,17 +42,37 @@
             </Grid>
         </Border>
         <DockPanel Margin="3">
+            <Label Content="Avatar: "/>
+            <TextBox Name="AvatarPathBox" DockPanel.Dock="Left" Style="{StaticResource InputBox}"
+                     Text="{Binding Path=AvatarPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged,
+                ValidatesOnDataErrors=True, NotifyOnValidationError=True}">
+                <TextBox.InputBindings>
+                    <KeyBinding Command="{Binding Path=SaveCommand}" Key="Enter" />
+                </TextBox.InputBindings>
+            </TextBox>
+            <Button DockPanel.Dock="Right" Content="..." Command="{Binding Path=AttachCommand}"/>
+        </DockPanel>
+        <ContentPresenter Content="{Binding ElementName=AvatarPathBox, Path=(Validation.Errors).CurrentItem}"/>
+        <DockPanel Margin="3">
             <Label Content="First name:" DockPanel.Dock="Left"/>
             <TextBox Name="FirstNameBox" DockPanel.Dock="Right" Style="{StaticResource InputBox}" 
                      Text="{Binding Path=FirstName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged,
-                ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
+                ValidatesOnDataErrors=True, NotifyOnValidationError=True}">
+                <TextBox.InputBindings>
+                    <KeyBinding Command="{Binding Path=SaveCommand}" Key="Enter" />
+                </TextBox.InputBindings>
+            </TextBox>
         </DockPanel>
         <ContentPresenter Content="{Binding ElementName=FirstNameBox, Path=(Validation.Errors).CurrentItem}"/>
         <DockPanel Margin="3">
             <Label Content="Last name:" DockPanel.Dock="Left"/>
             <TextBox Name="LastNameBox" DockPanel.Dock="Right" Style="{StaticResource InputBox}" 
                      Text="{Binding Path=LastName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged,
-                ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
+                ValidatesOnDataErrors=True, NotifyOnValidationError=True}">
+                <TextBox.InputBindings>
+                    <KeyBinding Command="{Binding Path=SaveCommand}" Key="Enter" />
+                </TextBox.InputBindings>
+            </TextBox>
         </DockPanel>
         <ContentPresenter Content="{Binding ElementName=LastNameBox, Path=(Validation.Errors).CurrentItem}"/>
         <StackPanel Margin="3" Orientation="Vertical">
@@ -71,20 +91,32 @@
         </StackPanel>
         <DockPanel Margin="3">
             <Label Content="Date of birth:"/>
-            <DatePicker SelectedDate="{Binding Path=DateOfBirth}"></DatePicker>
+            <DatePicker SelectedDate="{Binding Path=DateOfBirth}">
+                <DatePicker.InputBindings>
+                    <KeyBinding Command="{Binding Path=SaveCommand}" Key="Enter" />
+                </DatePicker.InputBindings>
+            </DatePicker>
         </DockPanel>
         <DockPanel Margin="3">
             <Label DockPanel.Dock="Left" Content="Phone: "/>
             <TextBox Name="PhoneBox" DockPanel.Dock="Right" Style="{StaticResource InputBox}" 
                      Text="{Binding Path=Phone, Mode=TwoWay, UpdateSourceTrigger=LostFocus,
-                ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
+                ValidatesOnDataErrors=True, NotifyOnValidationError=True}">
+                <TextBox.InputBindings>
+                    <KeyBinding Command="{Binding Path=SaveCommand}" Key="Enter" />
+                </TextBox.InputBindings>
+            </TextBox>
         </DockPanel>
         <ContentPresenter Content="{Binding ElementName=PhoneBox, Path=(Validation.Errors).CurrentItem}"/>
         <DockPanel Margin="3">
             <Label DockPanel.Dock="Left" Content="E-mail: "/>
             <TextBox Name="EmailBox" DockPanel.Dock="Right" Style="{StaticResource InputBox}" 
                      Text="{Binding Path=Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged,
-                ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
+                ValidatesOnDataErrors=True, NotifyOnValidationError=True}">
+                <TextBox.InputBindings>
+                    <KeyBinding Command="{Binding Path=SaveCommand}" Key="Enter" />
+                </TextBox.InputBindings>
+            </TextBox>
         </DockPanel>
         <ContentPresenter Content="{Binding ElementName=EmailBox, Path=(Validation.Errors).CurrentItem}"/>
         <DockPanel>

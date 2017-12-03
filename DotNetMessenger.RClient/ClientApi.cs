@@ -14,7 +14,7 @@ namespace DotNetMessenger.RClient
 {
     public static class ClientApi
     {
-        private const string ConnectionString = @"http://localhost:58302/api/";
+        private const string ConnectionString = @"http://94.19.250.182:58302/api/";
         private static readonly HttpClient Client;
         private static Guid _token = Guid.Empty;
 
@@ -129,7 +129,7 @@ namespace DotNetMessenger.RClient
                 _token = Guid.Empty;
                 return false;
             }
-            catch
+            catch (Exception)
             {
                 _token = Guid.Empty;
                 return false;

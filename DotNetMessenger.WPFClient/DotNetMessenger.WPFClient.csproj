@@ -87,10 +87,13 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Converters\EnumToBoolConverter.cs" />
+    <Compile Include="Converters\UserRoleConverter.cs" />
+    <Compile Include="Extensions\ImageExtensions.cs" />
     <Compile Include="PasswordBoxAssistant.cs" />
     <Compile Include="RelayCommand.cs" />
     <Compile Include="Router\IViewHost.cs" />
     <Compile Include="Router\ViewHostBuilder.cs" />
+    <Compile Include="Router\WindowSettingsAttribute.cs" />
     <Compile Include="Router\WpfViewHost.cs" />
     <Compile Include="Router\WPFViewModelPresenter.xaml.cs">
       <DependentUpon>WPFViewModelPresenter.xaml</DependentUpon>
@@ -102,12 +105,16 @@
     <Compile Include="ViewModels\Auth\LoginViewModel.cs" />
     <Compile Include="ViewModels\Auth\WelcomeViewModel.cs" />
     <Compile Include="ViewModels\ContextAction.cs" />
+    <Compile Include="ViewModels\CurrentChatViewModel.cs" />
     <Compile Include="ViewModels\Entities\ChatViewModel.cs" />
     <Compile Include="ViewModels\Entities\EntityViewModel.cs" />
     <Compile Include="ViewModels\Entities\HistoryViewModel.cs" />
     <Compile Include="ViewModels\Entities\UserViewModel.cs" />
+    <Compile Include="ViewModels\Info\AddUsersViewModel.cs" />
     <Compile Include="ViewModels\Info\ChatInfoViewModel.cs" />
     <Compile Include="ViewModels\Info\ChatUserEntryViewModel.cs" />
+    <Compile Include="ViewModels\Info\ManageUsersViewModel.cs" />
+    <Compile Include="ViewModels\Info\SetChatInfoViewModel.cs" />
     <Compile Include="ViewModels\Info\SetUserInfoViewModel.cs" />
     <Compile Include="ViewModels\Info\UserInfoViewModel.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
@@ -121,11 +128,26 @@
     <Compile Include="Views\AttachmentView.xaml.cs">
       <DependentUpon>AttachmentView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\Auth\WelcomeView.xaml.cs">
+      <DependentUpon>WelcomeView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\CurrentChatView.xaml.cs">
+      <DependentUpon>CurrentChatView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\EntityView.xaml.cs">
       <DependentUpon>EntityView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\Info\AddUsersView.xaml.cs">
+      <DependentUpon>AddUsersView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\Info\ChatInfoView.xaml.cs">
       <DependentUpon>ChatInfoView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Info\ManageUsersView.xaml.cs">
+      <DependentUpon>ManageUsersView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\Info\SetChatInfoView.xaml.cs">
+      <DependentUpon>SetChatInfoView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\Info\SetUserInfoView.xaml.cs">
       <DependentUpon>SetUserInfoView.xaml</DependentUpon>
@@ -147,9 +169,6 @@
     </Compile>
     <Compile Include="Windows\RegisterWindow.xaml.cs">
       <DependentUpon>RegisterWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Windows\WelcomeWindow.xaml.cs">
-      <DependentUpon>WelcomeWindow.xaml</DependentUpon>
     </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -178,11 +197,31 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Views\Auth\WelcomeView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\CurrentChatView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\EntityView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Views\Info\AddUsersView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\Info\ChatInfoView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Info\ManageUsersView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\Info\SetChatInfoView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -211,10 +250,6 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Windows\RegisterWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Windows\WelcomeWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

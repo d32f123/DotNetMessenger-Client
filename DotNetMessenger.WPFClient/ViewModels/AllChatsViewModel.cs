@@ -41,10 +41,37 @@ namespace DotNetMessenger.WPFClient.ViewModels
             Task.Run(async () =>
             {
                 await AddNewUsers(await ClientApi.UsersClient.GetAllUsersAsync());
-               await AddNewChats(
+                await AddNewChats(
                     (await ClientApi.ChatsClient.GetUserChatsAsync()).Where(x => x.ChatType == ChatTypes.GroupChat));
                 ClientApi.UsersClient.NewUsersEvent += UsersClientOnNewUsersEvent;
                 ClientApi.ChatsClient.NewChatsEvent += ChatsClientOnNewChatsEvent;
+                ClientApi.ChatsClient.LostChatsEvent += LostChatsEvent;
+            });
+        }
+
+        private void LostChatsEvent(object sender, IEnumerable<int> enumerable)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                foreach (var chatId in enumerable)
+                {
+                    for (var i = 0; i < Chats.Count; ++i)
+                    {
+                        if (Chats[i].CurrentChat.Id == chatId)
+                        {
+                            Chats.RemoveAt(i);
+                            break;
+                        }
+                    }
+                    for (var i = 0; i < Histories.Count; ++i)
+                    {
+                        if (Histories[i].ChatId == chatId)
+                        {
+                            Histories.RemoveAt(i);
+                            break;
+                        }
+                    }
+                }
             });
         }
 
@@ -109,8 +136,11 @@ namespace DotNetMessenger.WPFClient.ViewModels
 
         private async void NewMessageReceivedEvent(object sender, IEnumerable<Message> enumerable)
         {
+            var lastChatId = -1;
             foreach (var msg in enumerable)
             {
+                if (msg.ChatId == lastChatId) continue;
+                lastChatId = msg.ChatId;
                 ClientApi.MessagesClient.UnsubscribeFromChat(msg.ChatId, NewMessageReceivedEvent);
                 var chat = await ClientApi.ChatsClient.GetChatAsync(msg.ChatId);
                 if (chat.ChatType == ChatTypes.GroupChat)

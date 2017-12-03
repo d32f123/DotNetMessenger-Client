@@ -27,8 +27,6 @@ namespace DotNetMessenger.RClient.Classes
     {
         public int LastUserId { get; set; }
 
-        public int LastChatId { get; set; }
-
         public IEnumerable<UserInfoState> UsersStates { get; set; }
 
         public IEnumerable<ChatInfoState> ChatsStates { get; set; }
@@ -52,6 +50,8 @@ namespace DotNetMessenger.RClient.Classes
         public IEnumerable<User> NewUsers { get; set; }
 
         public IEnumerable<Chat> NewChats { get; set; }
+
+        public IEnumerable<int> LostChats { get; set; }
 
         public IEnumerable<User> UsersWithNewInfo { get; set; }
 

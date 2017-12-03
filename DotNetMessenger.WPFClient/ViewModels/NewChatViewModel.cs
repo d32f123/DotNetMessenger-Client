@@ -4,10 +4,12 @@ using System.Linq;
 using System.Windows.Input;
 using DotNetMessenger.Model;
 using DotNetMessenger.RClient;
+using DotNetMessenger.WPFClient.Router;
 using DotNetMessenger.WPFClient.ViewModels.Entities;
 
 namespace DotNetMessenger.WPFClient.ViewModels
 {
+    [WindowSettings("Create a chat", true)]
     public class NewChatViewModel : ViewModelBase
     {
         #region Properties

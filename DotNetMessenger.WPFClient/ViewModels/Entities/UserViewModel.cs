@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using DotNetMessenger.Model;
 using DotNetMessenger.RClient;
 using DotNetMessenger.WPFClient.Router;
@@ -15,7 +16,7 @@ namespace DotNetMessenger.WPFClient.ViewModels.Entities
             get => _currentUser;
             set
             {
-                if (value == _currentUser) return;
+                if (ReferenceEquals(value, _currentUser)) return;
                 if (_currentUser?.Id != value?.Id && _currentUser != null)
                 {
                     ClientApi.UsersClient.UnsubscribeFromNewUserInfo(_currentUser.Id, NewUserInfoHandler);
@@ -83,7 +84,10 @@ namespace DotNetMessenger.WPFClient.ViewModels.Entities
                 {
                     ClientApi.UsersClient.UnsubscribeFromNewUserInfo(_currentUser.Id, NewUserInfoHandler);
                 }
-                catch { }
+                catch (Exception e)
+                {
+                    Trace.WriteLine(e);
+                }
             }
         }
     }

@@ -9,7 +9,6 @@ using DotNetMessenger.Model;
 using DotNetMessenger.RClient.Extensions;
 using DotNetMessenger.RClient.Interfaces;
 using DotNetMessenger.RClient.LongPollers;
-using DotNetMessenger.RClient.Storages;
 
 namespace DotNetMessenger.RClient.Clients
 {
@@ -29,12 +28,17 @@ namespace DotNetMessenger.RClient.Clients
                 {
                     if (_poller == value) return;
                     if (_poller != null)
-                        _poller.NewUsersEvent -= NewUsersEvent;
+                        _poller.NewUsersEvent -= PollerOnNewUsersEvent;
 
                     _poller = value;
-                    _poller.NewUsersEvent += NewUsersEvent;
+                    _poller.NewUsersEvent += PollerOnNewUsersEvent;
                 }
             }
+        }
+
+        private void PollerOnNewUsersEvent(object sender, IEnumerable<User> enumerable)
+        {
+            NewUsersEvent?.Invoke(this, enumerable);
         }
 
         public event EventHandler<IEnumerable<User>> NewUsersEvent;

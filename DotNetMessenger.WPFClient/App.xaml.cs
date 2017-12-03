@@ -2,10 +2,10 @@
 using System.Windows;
 using System.Windows.Threading;
 using DotNetMessenger.RClient;
+using DotNetMessenger.WPFClient.Router;
 using DotNetMessenger.WPFClient.ViewModels.Auth;
 using LoginWindow = DotNetMessenger.WPFClient.Windows.LoginWindow;
 using RegisterWindow = DotNetMessenger.WPFClient.Windows.RegisterWindow;
-using WelcomeWindow = DotNetMessenger.WPFClient.Windows.WelcomeWindow;
 
 namespace DotNetMessenger.WPFClient
 {
@@ -26,12 +26,8 @@ namespace DotNetMessenger.WPFClient
 
             while (true)
             {
-                var welcomeWindow = new WelcomeWindow();
                 var welcomeModel = new WelcomeViewModel();
-                welcomeWindow.DataContext = welcomeModel;
-                welcomeModel.CloseRequested += (sender, args) => Current.Dispatcher.Invoke(() => welcomeWindow.Close());
-                welcomeWindow.ShowDialog();
-
+                ViewHostBuilder.GetViewHost().HostView(welcomeModel);
 
                 if (welcomeModel.IsRegistered == null)
                 {

@@ -3,11 +3,13 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using DotNetMessenger.RClient;
+using DotNetMessenger.WPFClient.Router;
 using DotNetMessenger.WPFClient.Validation;
 using ValidationCustomError = DotNetMessenger.WPFClient.Validation.ValidationCustomError;
 
 namespace DotNetMessenger.WPFClient.ViewModels.Auth
 {
+    [WindowSettings("Login", true)]
     public class LoginViewModel : ViewModelBase, IDataErrorInfo
     {
         private readonly ValidationErrorContainer _errorContainer = new ValidationErrorContainer();
@@ -111,7 +113,7 @@ namespace DotNetMessenger.WPFClient.ViewModels.Auth
 #if DEBUG
             if (App.IsDesignMode) return;
 #endif
-            var successful = (await ClientApi.RegisterAsync(Username, Password)) != null;
+            var successful = await ClientApi.RegisterAsync(Username, Password) != null;
             LoggedIn = successful;
             if (!successful)
             {

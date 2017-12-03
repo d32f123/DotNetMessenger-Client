@@ -119,11 +119,9 @@ namespace DotNetMessenger.RClient.Clients
                 // if for some reason we still don't have the messages in cache, just ask the server
                 if (!_messageCache.ContainsKey(chatId))
                 {
-                    _semaphore.Release();
-
                     var response = await _client
                         .PutAsJsonAsync($"messages/chats/{chatId}/bydate",
-                            new DateRange { DateFrom = dateFrom, DateTo = dateTo })
+                            new DateRange {DateFrom = dateFrom, DateTo = dateTo})
                         .ConfigureAwait(false);
 
 
@@ -135,13 +133,16 @@ namespace DotNetMessenger.RClient.Clients
                 _messageCache[chatId].RemoveAll(x => x.ExpirationDate != null && x.ExpirationDate < DateTime.Now);
                 var cached = _messageCache[chatId].Where(x =>
                     x.Date >= (dateFrom ?? DateTime.MinValue) && x.Date <= (dateTo ?? DateTime.MaxValue));
-                _semaphore.Release();
                 return cached;
             }
             catch (Exception e)
             {
                 Trace.Write(e.ToString());
                 throw;
+            }
+            finally
+            {
+                _semaphore.Release();
             }
         }
 
@@ -160,7 +161,6 @@ namespace DotNetMessenger.RClient.Clients
                 // if for some reason we still don't have the messages in cache, just ask the server
                 if (!_messageCache.ContainsKey(chatId))
                 {
-                    _semaphore.Release();
                     var response = await _client.GetAsync($"messages/chats/{chatId}/from/{messageId}")
                         .ConfigureAwait(false);
                     if (!response.IsSuccessStatusCode) return null;
@@ -169,13 +169,16 @@ namespace DotNetMessenger.RClient.Clients
                 }
                 _messageCache[chatId].RemoveAll(x => x.ExpirationDate != null && x.ExpirationDate < DateTime.Now);
                 var cached = _messageCache[chatId].Where(x => x.Id > messageId);
-                _semaphore.Release();
-                return cached;  
+                return cached;
             }
             catch (Exception e)
             {
                 Trace.Write(e.ToString());
                 throw;
+            }
+            finally
+            {
+                _semaphore.Release();
             }
         }
 
@@ -188,10 +191,8 @@ namespace DotNetMessenger.RClient.Clients
                 {
                     _messageCache[id].RemoveAll(x => x.ExpirationDate != null && x.ExpirationDate < DateTime.Now);
                     var cached = _messageCache[id].LastOrDefault();
-                    _semaphore.Release();
                     return cached;
                 }
-                _semaphore.Release();
 
                 var response = await _client.GetAsync($"messages/{id}/last").ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode) return null;
@@ -203,21 +204,23 @@ namespace DotNetMessenger.RClient.Clients
                 Trace.Write(e.ToString());
                 throw;
             }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         public async Task SendMessageAsync(int chatId, Message message)
         {
             await _semaphore.WaitAsync();
 
+            OnNewMessagesParseStart += ParseHandler;
             Task.Run(() => _poller.SendNewMessagesEvent(chatId, new[] {message}));
 
             var response = await _client.PostAsJsonAsync($"messages/{chatId}/{UserId}", message).ConfigureAwait(false);
-            if (response.IsSuccessStatusCode)
+            if (!response.IsSuccessStatusCode)
             {
-                OnNewMessagesParseStart += ParseHandler;
-            }
-            else
-            {
+                OnNewMessagesParseStart -= ParseHandler;
                 _semaphore.Release();
             }
         }

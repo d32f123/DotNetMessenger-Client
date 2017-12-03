@@ -32,15 +32,30 @@ namespace DotNetMessenger.RClient.Clients
                 {
                     if (_poller == value) return;
                     if (_poller != null)
-                        _poller.NewChatsEvent -= NewChatsEvent;
+                    {
+                        _poller.NewChatsEvent -= PollerOnNewChatsEvent;
+                        _poller.LostChatsEvent -= PollerOnLostChatsEvent;
+                    }
 
                     _poller = value;
-                    _poller.NewChatsEvent += NewChatsEvent;
+                    _poller.NewChatsEvent += PollerOnNewChatsEvent;
+                    _poller.LostChatsEvent += PollerOnLostChatsEvent;
                 }
             }
         }
 
+        private void PollerOnLostChatsEvent(object sender, IEnumerable<int> enumerable)
+        {
+            LostChatsEvent?.Invoke(this, enumerable);
+        }
+
+        private void PollerOnNewChatsEvent(object sender, IEnumerable<Chat> enumerable)
+        {
+            NewChatsEvent?.Invoke(this, enumerable);
+        }
+
         public event EventHandler<IEnumerable<Chat>> NewChatsEvent;
+        public event EventHandler<IEnumerable<int>> LostChatsEvent;
 
         private readonly CacheStorage<int, int> _dialogCache = new CacheStorage<int, int>(50);
 
@@ -109,12 +124,22 @@ namespace DotNetMessenger.RClient.Clients
             return null;
         }
 
-        public async Task<ChatUserInfo> GetChatUserInfoAsync(int chatId)
+        public async Task AddUsersAsync(int chatId, IEnumerable<int> userIds)
         {
-            return await GetChatSpecificUserinfoAsync(chatId, UserId);
+            await _client.PostAsJsonAsync($"chats/{chatId}/users", userIds);
         }
 
-        public async Task<ChatUserInfo> GetChatSpecificUserinfoAsync(int chatId, int userId)
+        public async Task KickUsersAsync(int chatId, IEnumerable<int> userIds)
+        {
+            await _client.PostAsJsonAsync($"chats/{chatId}/users/delete", userIds);
+        }
+
+        public async Task<ChatUserInfo> GetChatUserInfoAsync(int chatId)
+        {
+            return await GetChatSpecificUserInfoAsync(chatId, UserId);
+        }
+
+        public async Task<ChatUserInfo> GetChatSpecificUserInfoAsync(int chatId, int userId)
         {
             var chatUserId = new ChatUserId(userId, chatId);
             lock (_lock)
@@ -134,6 +159,35 @@ namespace DotNetMessenger.RClient.Clients
                         if (!_poller.ChatUserInfosCache.ContainsKey(chatUserId))
                             _poller.ChatUserInfosCache.Add(chatUserId, ret);
             return ret;
+        }
+
+        public async Task SetChatSpecificUserInfoAsync(int chatId, int userId, ChatUserInfo info)
+        {
+            var response = await _client.PutAsJsonAsync($"chats/{chatId}/users/{userId}/info", info);
+
+            if (!response.IsSuccessStatusCode) return;
+
+            lock (_lock)
+                _poller?.SetChatUserInfo(userId, chatId, info);
+        }
+
+        public async Task SetChatSpecificUserRoleAsync(int chatId, int userId, UserRoles role)
+        {
+            var roleId = (int) role;
+            await _client.PutAsync($"chats/{chatId}/users/{userId}/info/role/{roleId}", null);
+        }
+
+        public async Task<bool> SetChatInfoAsync(int chatId, ChatInfo chatInfo)
+        {
+            var response = await _client.PutAsJsonAsync($"chats/{chatId}/info", chatInfo);
+
+            lock (_lock)
+                if (_poller != null)
+                    lock (_poller.ChatsStorage)
+                        if (response.IsSuccessStatusCode && _poller.UsersStorage.ContainsKey(UserId))
+                            _poller.SetChatInfo(chatId, chatInfo);
+
+            return response.IsSuccessStatusCode;
         }
 
         public async Task<Chat> CreateNewGroupChat(string chatName, IEnumerable<int> users)

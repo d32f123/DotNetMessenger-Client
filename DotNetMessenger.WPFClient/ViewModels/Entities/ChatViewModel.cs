@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using DotNetMessenger.Model;
 using DotNetMessenger.RClient;
 using DotNetMessenger.WPFClient.Router;
@@ -15,7 +16,7 @@ namespace DotNetMessenger.WPFClient.ViewModels.Entities
             get => _currentChat;
             set
             {
-                if (value == _currentChat) return;
+                if (ReferenceEquals(value, _currentChat)) return;
                 if (_currentChat?.Id != value?.Id && _currentChat != null)
                 {
                     ClientApi.ChatsClient.UnsubscribeFromNewChatInfo(_currentChat.Id, NewChatInfoHandler);
@@ -69,7 +70,11 @@ namespace DotNetMessenger.WPFClient.ViewModels.Entities
             {
                 ClientApi.ChatsClient.UnsubscribeFromNewChatInfo(_currentChat.Id, NewChatInfoHandler);
             }
-            catch { }
+            catch (Exception e)
+            {
+                Trace.WriteLine(e);
+                // we're closing anyway, just let it closeeeeee
+            }
         }
     }
 }

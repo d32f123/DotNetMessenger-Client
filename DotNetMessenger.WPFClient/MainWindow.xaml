@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewModels="clr-namespace:DotNetMessenger.WPFClient.ViewModels"
         mc:Ignorable="d"
-        Title="MainWindow" MinHeight="200" MinWidth="350">
+        Title="Telegram" MinHeight="500" MinWidth="750" Height="500" Width="750">
     <Window.DataContext>
         <viewModels:MainWindowViewModel/>
     </Window.DataContext>
@@ -30,7 +30,7 @@
         <ContentControl Grid.Column="0" Grid.Row="2" Grid.RowSpan="3" Content="{Binding AllChatsViewModel}"/>
         <Border Background="GhostWhite" BorderBrush="Gainsboro" BorderThickness="1"
                 Grid.Row="1" Grid.Column="2">
-            <ContentControl Content="{Binding AllChatsViewModel.CurrentModel}"/>
+            <ContentControl Content="{Binding Path=CurrentChatViewModel}"/>
         </Border>
         <GridSplitter Grid.RowSpan="4"  Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" />
         <ScrollViewer VerticalScrollBarVisibility="Auto" Grid.Row="2" Grid.Column="2" ScrollChanged="ScrollViewer_OnScrollChanged">

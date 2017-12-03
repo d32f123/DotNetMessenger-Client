@@ -7,6 +7,8 @@
              xmlns:views="clr-namespace:DotNetMessenger.WPFClient.Views"
              xmlns:info="clr-namespace:DotNetMessenger.WPFClient.ViewModels.Info"
              xmlns:infoView="clr-namespace:DotNetMessenger.WPFClient.Views.Info"
+             xmlns:auth="clr-namespace:DotNetMessenger.WPFClient.ViewModels.Auth"
+             xmlns:authView="clr-namespace:DotNetMessenger.WPFClient.Views.Auth"
              StartupUri="MainWindow.xaml" Exit="App_OnExit" DispatcherUnhandledException="App_OnDispatcherUnhandledException">
     <Application.Resources>
         <DataTemplate DataType="{x:Type ValidationError}">
@@ -17,6 +19,9 @@
                     </Binding>
                 </TextBlock.Text>
             </TextBlock>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type auth:WelcomeViewModel}">
+            <authView:WelcomeView/>
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:AllChatsViewModel}">
             <views:AllChatsView/>
@@ -47,6 +52,18 @@
         </DataTemplate>
         <DataTemplate DataType="{x:Type info:SetUserInfoViewModel}">
             <infoView:SetUserInfoView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:CurrentChatViewModel}">
+            <views:CurrentChatView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type info:SetChatInfoViewModel}">
+            <infoView:SetChatInfoView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type info:ManageUsersViewModel}">
+            <infoView:ManageUsersView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type info:AddUsersViewModel}">
+            <infoView:AddUsersView/>
         </DataTemplate>
         <!-- Menu template -->
         <ItemsPanelTemplate x:Key="MenuItemPanelTemplate">

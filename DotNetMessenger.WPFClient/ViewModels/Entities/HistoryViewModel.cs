@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using DotNetMessenger.Model;
 using DotNetMessenger.RClient;
@@ -16,27 +17,36 @@ namespace DotNetMessenger.WPFClient.ViewModels.Entities
         private User _user;
         private Chat _chat;
 
-        private bool _isUser;
         private int _chatId = -1;
         private byte[] _avatar;
         private string _title;
 
         public int ChatId => _chatId;
+        public bool IsUser { get; private set; }
 
         public Chat Chat
         {
+            get => _chat;
             set
             {
                 if (_chatId == (value?.Id ?? -1)) return;
                 if (_chatId != -1)
                     ClientApi.MessagesClient.UnsubscribeFromChat(_chatId, NewMessagesHandler);
+                if (_user != null)
+                {
+                    ClientApi.UsersClient.UnsubscribeFromNewUserInfo(_user.Id, NewUserInfoHandler);
+                }
+                if (_chat != null)
+                {
+                    ClientApi.ChatsClient.UnsubscribeFromNewChatInfo(_chat.Id, NewChatInfoHandler);
+                }
                 _chatId = value?.Id ?? -1;
                 _avatar = value?.Info?.Avatar;
                 _title = value?.Info?.Title ?? value?.Id.ToString();
                 LastMessage = null;
                 _user = null;
                 _chat = value;
-                _isUser = false;
+                IsUser = false;
 
                 OnPropertyChanged(nameof(MainString));
                 OnPropertyChanged(nameof(SecondaryString));
@@ -45,33 +55,37 @@ namespace DotNetMessenger.WPFClient.ViewModels.Entities
 
                 if (value == null) return;
 
-                Application.Current.Dispatcher.Invoke(async () =>
+                Task.Run(() => Application.Current.Dispatcher.Invoke(async () =>
                 {
                     LastMessage = await ClientApi.MessagesClient.GetLatestChatMessageAsync(_chatId);
-                    ClientApi.MessagesClient.SubscribeToChat(_chatId, LastMessage?.Id ?? -1, NewMessagesHandler
-                    );
-                });
+                    ClientApi.MessagesClient.SubscribeToChat(_chatId, LastMessage?.Id ?? -1, NewMessagesHandler);
+                    ClientApi.ChatsClient.SubscribeToNewChatInfo(_chat.Id, NewChatInfoHandler);
+                }));
             }
-        }
-
-        private void NewMessagesHandler(object sender, IEnumerable<Message> enumerable)
-        {
-            LastMessage = enumerable.Last();
         }
 
         public User User
         {
+            get => _user;
             set
             {
                 if (_chatId != -1)
                     ClientApi.MessagesClient.UnsubscribeFromChat(_chatId, NewMessagesHandler);
+                if (_user != null)
+                {
+                    ClientApi.UsersClient.UnsubscribeFromNewUserInfo(_user.Id, NewUserInfoHandler);
+                }
+                if (_chat != null)
+                {
+                    ClientApi.ChatsClient.UnsubscribeFromNewChatInfo(_chat.Id, NewChatInfoHandler);
+                }
                 _chatId = -1;
                 _avatar = value?.UserInfo?.Avatar;
                 _title = value?.Username ?? string.Empty;
                 LastMessage = null;
                 _user = value;
                 _chat = null;
-                _isUser = true;
+                IsUser = true;
 
                 OnPropertyChanged(nameof(MainString));
                 OnPropertyChanged(nameof(SecondaryString));
@@ -80,12 +94,13 @@ namespace DotNetMessenger.WPFClient.ViewModels.Entities
 
                 if (value == null) return;
 
-                Application.Current.Dispatcher.Invoke(async () =>
+                Task.Run(() => Application.Current.Dispatcher.Invoke(async () =>
                 {
                     _chatId = (await ClientApi.ChatsClient.GetDialogChatAsync(value.Id)).Id;
                     LastMessage = await ClientApi.MessagesClient.GetLatestChatMessageAsync(_chatId);
                     ClientApi.MessagesClient.SubscribeToChat(_chatId, LastMessage?.Id ?? -1, NewMessagesHandler);
-                });
+                    ClientApi.UsersClient.SubscribeToNewUserInfo(_user.Id, NewUserInfoHandler);
+                }));
             }
         }
 
@@ -147,7 +162,7 @@ namespace DotNetMessenger.WPFClient.ViewModels.Entities
 
         private void ShowInfoViewModel(object o)
         {
-            if (!_isUser)
+            if (!IsUser)
                 ViewHostBuilder.GetViewHost().HostView(new ChatInfoViewModel(_chat));
             else
             {
@@ -167,22 +182,49 @@ namespace DotNetMessenger.WPFClient.ViewModels.Entities
             User = user;
         }
 
+        private void NewUserInfoHandler(object sender, User user)
+        {
+            _avatar = user?.UserInfo?.Avatar;
+            _title = user?.Username ?? string.Empty;
+            OnPropertyChanged(nameof(MainString));
+            OnPropertyChanged(nameof(Image));
+        }
+
+        private void NewChatInfoHandler(object sender, Chat chat)
+        {
+            _avatar = chat?.Info?.Avatar;
+            _title = chat?.Info?.Title ?? chat?.Id.ToString();
+            OnPropertyChanged(nameof(MainString));
+            OnPropertyChanged(nameof(Image));
+        }
+
+        private void NewMessagesHandler(object sender, IEnumerable<Message> enumerable)
+        {
+            LastMessage = enumerable.Last();
+        }
+
         public override string MainString => _title;
         public override string SecondaryString
         {
             get
             {
+                var retstring = string.Empty;
                 if (_lastMessage == null) return string.Empty;
+
+                if (_lastMessage.SenderId == ClientApi.UserId) retstring = "You: ";
+
                 if (string.IsNullOrEmpty(_lastMessage.Text))
                 {
                     // if there is no text, there should be a file attached
-                    return "<attachment>";
+                    retstring += "<attachment>";
+                    return retstring;
                 }
                 if (_lastMessage.Text.Length > 15)
                 {
-                    return _lastMessage.Text.Substring(0, 15) + "...";
+                    retstring += _lastMessage.Text.Substring(0, 15) + "...";
+                    return retstring;
                 }
-                return _lastMessage.Text;
+                return retstring += _lastMessage.Text;
             }
         }
 
@@ -193,6 +235,14 @@ namespace DotNetMessenger.WPFClient.ViewModels.Entities
         {
             if (_chatId != -1)
                 ClientApi.MessagesClient.UnsubscribeFromChat(_chatId, NewMessagesHandler);
+            if (_user != null)
+            {
+                ClientApi.UsersClient.UnsubscribeFromNewUserInfo(_user.Id, NewUserInfoHandler);
+            }
+            if (_chat != null)
+            {
+                ClientApi.ChatsClient.UnsubscribeFromNewChatInfo(_chat.Id, NewChatInfoHandler);
+            }
         }
     }
 }

@@ -17,15 +17,17 @@ namespace DotNetMessenger.WPFClient.ViewModels.Info
             get => _user;
             set
             {
-                if (Equals(_user, value)) return;
+                if (ReferenceEquals(_user, value)) return;
                 IsCreator = false;
                 _user = value;
+                _user.ChatUserInfos = null;
                 OnPropertyChanged(nameof(User));
                 OnPropertyChanged(nameof(Username));
                 OnPropertyChanged(nameof(Avatar));
                 OnPropertyChanged(nameof(FirstName));
                 OnPropertyChanged(nameof(LastName));
                 OnPropertyChanged(nameof(DateOfBirth));
+                OnPropertyChanged(nameof(UserRole));
                 OnPropertyChanged(nameof(Gender));
                 OnPropertyChanged(nameof(Phone));
                 OnPropertyChanged(nameof(Email));
@@ -59,8 +61,11 @@ namespace DotNetMessenger.WPFClient.ViewModels.Info
                 if (_isCreator == value) return;
                 _isCreator = value;
                 OnPropertyChanged(nameof(IsCreator));
+                OnPropertyChanged(nameof(IsNotSelfOrCreator));
             }
         }
+
+        public bool IsNotSelfOrCreator => !IsCreator && _user?.Id != ClientApi.UserId;
 
         public string Username => _user?.Username;
         public byte[] Avatar => _user?.UserInfo?.Avatar;
@@ -74,6 +79,17 @@ namespace DotNetMessenger.WPFClient.ViewModels.Info
         public ChatUserInfo ChatUserInfo => _user?.ChatUserInfos?[_chatId];
         public string UserNickname => ChatUserInfo?.Nickname;
         public string RoleName => ChatUserInfo?.Role.RoleName;
+
+        public UserRoles UserRole
+        {
+            get => ChatUserInfo?.Role?.RoleType ?? UserRoles.Listener;
+            set
+            {
+                if (ChatUserInfo.Role.RoleType == value) return;
+                ChatUserInfo.Role.RoleType = value;
+                OnPropertyChanged(nameof(UserRole));
+            }
+        }
         public bool ReadPermission => (ChatUserInfo?.Role.RolePermissions & RolePermissions.ReadPerm) != 0;
         public bool WritePermission => (ChatUserInfo?.Role.RolePermissions & RolePermissions.WritePerm) != 0;
         public bool AttachPermission => (ChatUserInfo?.Role.RolePermissions & RolePermissions.AttachPerm) != 0;
@@ -90,12 +106,14 @@ namespace DotNetMessenger.WPFClient.ViewModels.Info
             if (args.PropertyName == nameof(ChatUserInfo))
             {
                 OnPropertyChanged(nameof(UserNickname));
+                OnPropertyChanged(nameof(UserRole));
                 OnPropertyChanged(nameof(RoleName));
                 OnPropertyChanged(nameof(ReadPermission));
                 OnPropertyChanged(nameof(WritePermission));
                 OnPropertyChanged(nameof(AttachPermission));
                 OnPropertyChanged(nameof(ChatInfoPermission));
                 OnPropertyChanged(nameof(UserManagementPermission));
+                OnPropertyChanged(nameof(IsNotSelfOrCreator));
             }
         }
 
@@ -115,7 +133,7 @@ namespace DotNetMessenger.WPFClient.ViewModels.Info
 
                 if (chat?.CreatorId == _user.Id)
                     IsCreator = true;
-                var info = await ClientApi.ChatsClient.GetChatSpecificUserinfoAsync(_chatId, _user.Id);
+                var info = await ClientApi.ChatsClient.GetChatSpecificUserInfoAsync(_chatId, _user.Id);
                 _user.ChatUserInfos = new Dictionary<int, ChatUserInfo>
                 {
                     {_chatId, info}

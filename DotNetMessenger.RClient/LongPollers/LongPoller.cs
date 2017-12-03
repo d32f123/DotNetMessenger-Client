@@ -66,7 +66,7 @@ namespace DotNetMessenger.RClient.LongPollers
                 {
                     response = await _client.SendAsync(Request).ConfigureAwait(false);
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     response = null;
                 }

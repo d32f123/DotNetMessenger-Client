@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 using System.Windows;
 using DotNetMessenger.Model;
 using DotNetMessenger.RClient;
 
 namespace DotNetMessenger.WPFClient.ViewModels
 {
-    public class MessageViewModel : ViewModelBase
+    public class MessageViewModel : ViewModelBase, IDisposable
     {
         private User _user;
         private Message _message;
@@ -17,11 +18,27 @@ namespace DotNetMessenger.WPFClient.ViewModels
             set
             {
                 if (_user?.Id == value?.Id) return;
+                if (_user != null)
+                {
+                    ClientApi.UsersClient.UnsubscribeFromNewUserInfo(_user.Id, NewUserInfoHandler);
+                }
                 _user = value;
                 OnPropertyChanged(nameof(User));
                 OnPropertyChanged(nameof(Avatar));
                 OnPropertyChanged(nameof(SenderName));
+                if (_user != null)
+                {
+                    ClientApi.UsersClient.SubscribeToNewUserInfo(_user.Id, NewUserInfoHandler);
+                }
             }
+        }
+
+        private void NewUserInfoHandler(object sender, User user)
+        {
+            _user.UserInfo = user?.UserInfo;
+            OnPropertyChanged(nameof(Avatar));
+            OnPropertyChanged(nameof(User));
+            OnPropertyChanged(nameof(SenderName));
         }
 
         public Message Message
@@ -45,8 +62,8 @@ namespace DotNetMessenger.WPFClient.ViewModels
                     }
                 
                 OnPropertyChanged(nameof(AttacmentViewModels));
-                Application.Current.Dispatcher.Invoke(async () =>
-                    User = await ClientApi.UsersClient.GetUserAsync(_message.SenderId));
+                Task.Run(() => Application.Current.Dispatcher.Invoke(async () =>
+                    User = await ClientApi.UsersClient.GetUserAsync(_message.SenderId)));
             }
         }
 
@@ -64,6 +81,14 @@ namespace DotNetMessenger.WPFClient.ViewModels
         public MessageViewModel(Message message)
         {
             Message = message;
+        }
+
+        public void Dispose()
+        {
+            if (_user != null)
+            {
+                ClientApi.UsersClient.UnsubscribeFromNewUserInfo(_user.Id, NewUserInfoHandler);
+            }
         }
     }
 }

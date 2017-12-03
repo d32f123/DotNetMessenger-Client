@@ -1,0 +1,69 @@
+﻿<UserControl x:Class="DotNetMessenger.WPFClient.Views.Info.SetChatInfoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:info="clr-namespace:DotNetMessenger.WPFClient.ViewModels.Info"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300" d:DataContext="{d:DesignInstance info:SetChatInfoViewModel}">
+    <UserControl.Resources>
+        <Style x:Key="InputBox" TargetType="TextBox">
+            <Setter Property="Width" Value="145"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"></Setter>
+        </Style>
+    </UserControl.Resources>
+    <StackPanel Orientation="Vertical" Background="White" Width="220" Height="Auto" Margin="5">
+        <Border Background="GhostWhite"  BorderBrush="Gainsboro" BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="5"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Image Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" Style="{StaticResource AvatarStyle}">
+                    <Image.Source>
+                        <Binding Path="CurrentAvatar">
+                            <Binding.TargetNullValue>
+                                <ImageSource>/Resources/defaultAvatar.png</ImageSource>
+                            </Binding.TargetNullValue>
+                        </Binding>
+                    </Image.Source>
+                </Image>
+                <TextBlock Grid.Column="1" Grid.Row="0" Margin="5,0,0,0" Text="{Binding Path=Title, Mode=OneWay}"/>
+                <TextBlock Grid.Column="1" Grid.Row="2" Margin="5,0,0,0" >ID: <Run Text="{Binding Chat.Id, Mode=OneWay}"/></TextBlock>
+            </Grid>
+        </Border>
+        <DockPanel Margin="3">
+            <Label Content="Avatar: "/>
+            <TextBox Name="AvatarPathBox" DockPanel.Dock="Left" Style="{StaticResource InputBox}"
+                     Text="{Binding Path=AvatarPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged,
+                ValidatesOnDataErrors=True, NotifyOnValidationError=True}">
+                <TextBox.InputBindings>
+                    <KeyBinding Command="{Binding Path=SaveCommand}" Key="Enter" />
+                </TextBox.InputBindings>
+            </TextBox>
+            <Button DockPanel.Dock="Right" Content="..." Command="{Binding Path=AttachCommand}"/>
+        </DockPanel>
+        <ContentPresenter Content="{Binding ElementName=AvatarPathBox, Path=(Validation.Errors).CurrentItem}"/>
+        <DockPanel Margin="3">
+            <Label Content="Title:" DockPanel.Dock="Left"/>
+            <TextBox Name="FirstNameBox" DockPanel.Dock="Right" Style="{StaticResource InputBox}" 
+                     Text="{Binding Path=Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged,
+                ValidatesOnDataErrors=True, NotifyOnValidationError=True}">
+                <TextBox.InputBindings>
+                    <KeyBinding Command="{Binding Path=SaveCommand}" Key="Enter" />
+                </TextBox.InputBindings>
+            </TextBox>
+        </DockPanel>
+        <ContentPresenter Content="{Binding ElementName=FirstNameBox, Path=(Validation.Errors).CurrentItem}"/>
+        <DockPanel>
+            <Button Command="{Binding Path=SaveCommand}" Content="Save" Margin="5,2,0,5" Height="22" Width="85"/>
+            <Button Command="{Binding Path=CloseCommand}" Content="Exit" Margin="0,2,5,5" Height="22" Width="85" HorizontalAlignment="Right"/>
+        </DockPanel>
+    </StackPanel>
+</UserControl>

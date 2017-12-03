@@ -11,7 +11,7 @@ using DotNetMessenger.WPFClient.Extensions;
 
 namespace DotNetMessenger.WPFClient.ViewModels
 {
-    public class SenderViewModel : ViewModelBase
+    public class SenderViewModel : ViewModelBase, IDisposable
     {
         private RolePermissions _permissions;
         private Chat _chat;
@@ -28,8 +28,8 @@ namespace DotNetMessenger.WPFClient.ViewModels
             get => _chat;
             set
             {
-                if (Equals(_chat, value)) return;
-                if (_chat?.ChatType == ChatTypes.Dialog)
+                if (ReferenceEquals(_chat, value)) return;
+                if (_chat != null && _chat.ChatType != ChatTypes.Dialog)
                 {
                     ClientApi.ChatsClient.UnsubscribeFromNewChatUserInfo(_chat.Id, ClientApi.UserId, NewChatUserInfo);
                 }
@@ -208,6 +208,14 @@ namespace DotNetMessenger.WPFClient.ViewModels
                     FileName = shortFileName,
                     File = System.IO.File.ReadAllBytes(filename)
                 };
+            }
+        }
+
+        public void Dispose()
+        {
+            if (_chat != null && _chat.ChatType != ChatTypes.Dialog)
+            {
+                ClientApi.ChatsClient.UnsubscribeFromNewChatUserInfo(_chat.Id, ClientApi.UserId, NewChatUserInfo);
             }
         }
     }

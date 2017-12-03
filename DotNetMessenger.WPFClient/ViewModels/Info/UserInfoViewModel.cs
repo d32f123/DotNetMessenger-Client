@@ -1,9 +1,11 @@
 ﻿using System;
 using DotNetMessenger.Model;
 using DotNetMessenger.Model.Enums;
+using DotNetMessenger.WPFClient.Router;
 
 namespace DotNetMessenger.WPFClient.ViewModels.Info
 {
+    [WindowSettings("User info", true)]
     public class UserInfoViewModel : ViewModelBase
     {
         private User _user;
@@ -12,7 +14,7 @@ namespace DotNetMessenger.WPFClient.ViewModels.Info
             get => _user;
             set
             {
-                if (Equals(_user, value)) return;
+                if (ReferenceEquals(_user, value)) return;
                 _user = value;
                 OnPropertyChanged(nameof(User));
                 OnPropertyChanged(nameof(Username));

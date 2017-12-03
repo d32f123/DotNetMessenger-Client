@@ -1,7 +1,9 @@
 ﻿using System.Windows.Input;
+using DotNetMessenger.WPFClient.Router;
 
 namespace DotNetMessenger.WPFClient.ViewModels.Auth
 {
+    [WindowSettings("Welcome", true)]
     public class WelcomeViewModel : ViewModelBase
     {
         private bool? _isRegistered;

@@ -15,6 +15,7 @@ namespace DotNetMessenger.RClient.LongPollers
     {
         public event EventHandler<IEnumerable<User>> NewUsersEvent;
         public event EventHandler<IEnumerable<Chat>> NewChatsEvent;
+        public event EventHandler<IEnumerable<int>> LostChatsEvent;
         public event EventHandler<IEnumerable<Message>> NewMessagesEvent;
 
         private readonly IUsersClient _usersClient;
@@ -26,13 +27,12 @@ namespace DotNetMessenger.RClient.LongPollers
         private readonly Dictionary<ChatUserId, EventHandler<ChatUserInfo>> _newChatUserInfosHandlers; 
 
         public NewEventsPoller(string connectionString, Guid token, IUsersClient usersClient, IChatsClient chatsClient) 
-            : base(connectionString, token)
+            : base(connectionString, token, true, 3000)
         {
             AreChatsPolled = false;
             UsersStorage = new Dictionary<int, User>();
             ChatsStorage = new Dictionary<int, Chat>();
             ChatUserInfosCache = new CacheStorage<ChatUserId, ChatUserInfo>();
-            _lastChatId = -1;
             _lastUserId = -1;
 
             _newChatInfoHandlers = new Dictionary<int, EventHandler<Chat>>();
@@ -42,7 +42,11 @@ namespace DotNetMessenger.RClient.LongPollers
             _newUserInfoHandlers = new Dictionary<int, EventHandler<User>>();
 
             usersClient.GetAllUsersAsync().Result.ForEach(x => UsersStorage.Add(x.Id, x));
-            chatsClient.GetUserChatsAsync().Result.ForEach(x => ChatsStorage.Add(x.Id, x));
+            chatsClient.GetUserChatsAsync().Result.ForEach(x =>
+            {
+                if (!ChatsStorage.ContainsKey(x.Id))
+                    ChatsStorage.Add(x.Id, x);
+            });
 
             _usersClient = usersClient;
         }
@@ -55,13 +59,16 @@ namespace DotNetMessenger.RClient.LongPollers
             public bool IsPolled { get; set; }
         }
 
-        private int _lastChatId;
         private int _lastUserId;
         public readonly Dictionary<int, MessageWithState> ChatMessagesDictionary = new Dictionary<int, MessageWithState>();
+        private IEnumerable<int> _polledChats;
+
 
         public Dictionary<int, User> UsersStorage { get; }
         public Dictionary<int, Chat> ChatsStorage { get; }
         public CacheStorage<ChatUserId, ChatUserInfo> ChatUserInfosCache { get; }
+
+        #region Subscriptions
 
         public void SubscribeToNewChatMessages(int chatId, EventHandler<IEnumerable<Message>> handler)
         {
@@ -198,6 +205,9 @@ namespace DotNetMessenger.RClient.LongPollers
             }
         }
 
+        #endregion
+
+        #region Data setting
         public void SetUser(User user)
         {
             lock (UsersStorage)
@@ -239,14 +249,31 @@ namespace DotNetMessenger.RClient.LongPollers
                 if (ChatsStorage.ContainsKey(chat.Id))
                 {
                     ChatsStorage[chat.Id] = chat;
-                    if (_newChatInfoHandlers.ContainsKey(chat.Id))
-                        _newChatInfoHandlers[chat.Id]?.Invoke(this, chat);
+                    lock (_newChatInfoHandlers)
+                        if (_newChatInfoHandlers.ContainsKey(chat.Id))
+                            _newChatInfoHandlers[chat.Id]?.Invoke(this, chat);
                 }
                 else
                 {
                     ChatsStorage.Add(chat.Id, chat);
                     NewChatsEvent?.Invoke(this, new[] {chat});
                 }
+            }
+        }
+
+        public void SetChatInfo(int chatId, ChatInfo chatInfo)
+        {
+            lock (ChatsStorage)
+            {
+                if (!ChatsStorage.ContainsKey(chatId))
+                {
+                    throw new ArgumentException("Could not set chat info");
+                }
+                ChatsStorage[chatId] = ChatsStorage[chatId].CloneJson();
+                ChatsStorage[chatId].Info = chatInfo;
+                lock (_newChatInfoHandlers)
+                    if (_newChatInfoHandlers.ContainsKey(chatId))
+                        _newChatInfoHandlers[chatId]?.Invoke(this, ChatsStorage[chatId]);
             }
         }
 
@@ -279,6 +306,8 @@ namespace DotNetMessenger.RClient.LongPollers
             }
         }
 
+        #endregion
+
         protected override HttpRequestMessage Request
         {
             get
@@ -286,7 +315,6 @@ namespace DotNetMessenger.RClient.LongPollers
                 var request = new HttpRequestMessage(HttpMethod.Post, "events");
                 var clientState = new ClientState
                 {
-                    LastChatId = _lastChatId,
                     LastUserId = _lastUserId
                 };
 
@@ -305,7 +333,9 @@ namespace DotNetMessenger.RClient.LongPollers
                 var chatsStates = new List<ChatInfoState>();
                 lock (ChatsStorage)
                 {
+                    _polledChats = new List<int>(ChatsStorage.Keys);
                     lock (ChatMessagesDictionary)
+                    {
                         chatsStates.AddRange(ChatsStorage.Values.Select(chat => new ChatInfoState
                         {
                             ChatId = chat.Id,
@@ -313,7 +343,7 @@ namespace DotNetMessenger.RClient.LongPollers
                             LastChatMessageId = ChatMessagesDictionary.ContainsKey(chat.Id)
                                 ? ChatMessagesDictionary[chat.Id].MessageId
                                 : -1,
-                            CurrentMembers = chat.Users.Select(x => new UserInfoState
+                            CurrentMembers = chat.Users?.Select(x => new UserInfoState
                             {
                                 UserId = x,
                                 UserHash = ChatUserInfosCache.ContainsKey(new ChatUserId(x, chat.Id))
@@ -321,6 +351,7 @@ namespace DotNetMessenger.RClient.LongPollers
                                     : -1
                             })
                         }));
+                    }
                 }
                 clientState.ChatsStates = chatsStates;
                 request.AddContent(clientState);
@@ -328,125 +359,230 @@ namespace DotNetMessenger.RClient.LongPollers
             }
         }
 
-        protected override async Task OnSuccessfulResponse(HttpResponseMessage response)
+        private void ProcessNewChats(IEnumerable<Chat> chats)
         {
-            var resp = await response.Content.ReadAsAsync<ServerInfoOutput>();
+            if (chats == null) return;
 
-            if (resp.NewChats != null && resp.NewChats.Any())
+            var chatsArray = chats as Chat[] ?? chats.ToArray();
+
+            if (!chatsArray.Any()) return;
+
+            lock (ChatsStorage)
+                foreach (var chat in chatsArray)
+                    if (!ChatsStorage.ContainsKey(chat.Id))
+                        ChatsStorage.Add(chat.Id, chat);
+            NewChatsEvent?.Invoke(this, chatsArray);
+            AreChatsPolled = true;
+        }
+
+        private void ProcessLostChats(IEnumerable<int> chatIds)
+        {
+            if (chatIds == null) return;
+
+            var chatIdsArray = chatIds as int[] ?? chatIds.ToArray();
+
+            if (!chatIdsArray.Any()) return;
+
+            lock (ChatsStorage)
+                foreach (var chatId in chatIdsArray)
+                    if (ChatsStorage.ContainsKey(chatId))
+                        ChatsStorage.Remove(chatId);
+            LostChatsEvent?.Invoke(this, chatIdsArray);
+        }
+
+        private void ProcessNewUsers(IEnumerable<User> users)
+        {
+            if (users == null) return;
+
+            var usersArray = users as User[] ?? users.ToArray();
+
+            if (!usersArray.Any()) return;
+
+            _lastUserId = usersArray.Last().Id;
+            lock (UsersStorage)
             {
-                _lastChatId = resp.NewChats.Last().Id;
-                lock (ChatsStorage)
-                    foreach (var chat in resp.NewChats)
-                        if (!ChatsStorage.ContainsKey(chat.Id))
-                            ChatsStorage.Add(chat.Id, chat);
-                NewChatsEvent?.Invoke(this, resp.NewChats);
-                AreChatsPolled = true;
+                foreach (var user in usersArray)
+                    if (!UsersStorage.ContainsKey(user.Id))
+                        UsersStorage.Add(user.Id, user);
             }
+            NewUsersEvent?.Invoke(this, usersArray);
+        }
 
-            if (resp.NewUsers != null && resp.NewUsers.Any())
-            {
-                _lastUserId = resp.NewUsers.Last().Id;
-                lock (UsersStorage)
-                {
-                    foreach (var user in resp.NewUsers)
-                        if (!UsersStorage.ContainsKey(user.Id))
-                            UsersStorage.Add(user.Id, user);
-                }
-                NewUsersEvent?.Invoke(this, resp.NewUsers);
-            }
+        private void ProcessUsersWithNewInfo(IEnumerable<User> users)
+        {
+            if (users == null) return;
 
-            foreach (var user in resp.UsersWithNewInfo)
+            var usersArray = users as User[] ?? users.ToArray();
+
+            if (!usersArray.Any()) return;
+
+            foreach (var user in usersArray)
             {
                 lock (UsersStorage)
                     UsersStorage[user.Id] = user;
 
                 lock (_newUserInfoHandlers)
-                if (_newUserInfoHandlers.ContainsKey(user.Id))
+                    if (_newUserInfoHandlers.ContainsKey(user.Id))
+                    {
+                        _newUserInfoHandlers[user.Id]?.Invoke(this, user);
+                    }
+            }
+        }
+
+        private void ProcessNewChatDescription(Chat chat)
+        {
+            if (chat == null) return;
+
+            lock (ChatsStorage)
+                ChatsStorage[chat.Id] = chat;
+            lock (_newUserInfoHandlers)
+            {
+                if (_newChatInfoHandlers.ContainsKey(chat.Id))
                 {
-                    _newUserInfoHandlers[user.Id]?.Invoke(this, user);
+                    _newChatInfoHandlers[chat.Id]?.Invoke(this, chat);
+                }
+            }
+        }
+
+        private void ProcessNewChatMembers(int chatId, IEnumerable<int> members)
+        {
+            if (members == null) return;
+
+            var membersArray = members as int[] ?? members.ToArray();
+
+            if (!membersArray.Any()) return;
+
+            lock (ChatsStorage)
+            {
+                lock (ChatUserInfosCache)
+                {
+                    var prevMembers = ChatsStorage[chatId].Users;
+                    foreach (var excludedMember in prevMembers.Where(x => !membersArray.Contains(x)))
+                    {
+                        var key = new ChatUserId(excludedMember, chatId);
+                        if (ChatUserInfosCache.ContainsKey(key))
+                            ChatUserInfosCache.Remove(key);
+                    }
+                }
+                ChatsStorage[chatId].Users = membersArray;
+            }
+
+            lock (_newChatMembersHandlers)
+            {
+                if (_newChatMembersHandlers.ContainsKey(chatId))
+                {
+                    _newChatMembersHandlers[chatId]?.Invoke(this, membersArray);
+                }
+            }
+        }
+
+        private void ProcessNewChatUserInfos(int chatId, Dictionary<int, ChatUserInfo> chatUserInfos)
+        {
+            if (chatUserInfos == null || !chatUserInfos.Any()) return;
+
+            lock (ChatUserInfosCache)
+            {
+                lock (_newChatUserInfosHandlers)
+                {
+                    foreach (var userInfo in chatUserInfos)
+                    {
+                        var id = new ChatUserId(userInfo.Key, chatId);
+                        if (ChatUserInfosCache.ContainsKey(id))
+                        {
+                            ChatUserInfosCache[id] = userInfo.Value;
+                        }
+                        if (_newChatUserInfosHandlers.ContainsKey(id))
+                        {
+                            _newChatUserInfosHandlers[id]?.Invoke(this, userInfo.Value);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void ProcessNewChatMessages(int chatId, IEnumerable<Message> messages)
+        {
+            if (messages == null) return;
+
+            var messagesArray = messages as Message[] ?? messages.ToArray();
+
+            if (!messagesArray.Any()) return;
+
+            bool wasPolled;
+            lock (ChatMessagesDictionary)
+            {
+                wasPolled = ChatMessagesDictionary.ContainsKey(chatId) && ChatMessagesDictionary[chatId].IsPolled;
+            }
+
+            if (wasPolled)
+                NewMessagesEvent?.Invoke(this, messagesArray);
+
+            lock (ChatMessagesDictionary)
+            {
+                if (ChatMessagesDictionary.ContainsKey(chatId))
+                {
+                    ChatMessagesDictionary[chatId].MessageId = messagesArray.Last().Id;
+                }
+                else
+                {
+                    ChatMessagesDictionary.Add(chatId, new MessageWithState { IsPolled = true, MessageId = messagesArray.Last().Id });
                 }
             }
 
-            foreach (var chatInfo in resp.NewChatInfo)
+            if (!wasPolled) return;
+
+            if (messagesArray.All(x => x.SenderId == (_usersClient?.UserId ?? -1))) return;
+
+            lock (_newChatMessagesHandlers)
             {
-                if (chatInfo.Chat != null)
-                {
-                    lock (ChatsStorage)
-                        ChatsStorage[chatInfo.ChatId] = chatInfo.Chat;
-                    lock (_newUserInfoHandlers)
-                    {
-                        if (_newChatInfoHandlers.ContainsKey(chatInfo.ChatId))
-                        {
-                            _newChatInfoHandlers[chatInfo.ChatId]?.Invoke(this, chatInfo.Chat);
-                        }
-                    }
-                }
-                if (chatInfo.NewMembers != null && chatInfo.NewMembers.Any())
-                {
-                    lock (ChatsStorage)
-                    {
-                        ChatsStorage[chatInfo.ChatId].Users = ChatsStorage[chatInfo.ChatId].Users.Concat(chatInfo.NewMembers);
-                    }
-                    lock (_newChatMembersHandlers)
-                    if (_newChatMembersHandlers.ContainsKey(chatInfo.ChatId))
-                    {
-                        _newChatMembersHandlers[chatInfo.ChatId]?.Invoke(this, chatInfo.NewMembers);
-                    }
-                }
-                if (chatInfo.NewChatUserInfos != null && chatInfo.NewChatUserInfos.Any())
-                {
-                    lock (ChatUserInfosCache)
-                    lock (_newChatUserInfosHandlers)
-                        foreach (var userInfo in chatInfo.NewChatUserInfos)
-                        {
-                            var id = new ChatUserId(userInfo.Key, chatInfo.ChatId);
-                            if (ChatUserInfosCache.ContainsKey(id))
-                                ChatUserInfosCache[id] = userInfo.Value;
-                            if (_newChatUserInfosHandlers.ContainsKey(id))
-                            {
-                                _newChatUserInfosHandlers[id]?.Invoke(this, userInfo.Value);
-                            }
-                        }
-                }
+                if (!_newChatMessagesHandlers.ContainsKey(chatId)) return;
+                _newChatMessagesHandlers[chatId]?.Invoke(this,
+                    messagesArray.Where(x => x.SenderId != (_usersClient?.UserId ?? -1)));
+            }
+        }
 
-                var wasPolled = true;
+        private void ProcessNewChatInfos(IEnumerable<ChatInfoOutput> chatInfos)
+        {
+            foreach (var chatInfo in chatInfos)
+            {
+                ProcessNewChatDescription(chatInfo.Chat);
+
+                ProcessNewChatMembers(chatInfo.ChatId, chatInfo.NewMembers);
+
+                ProcessNewChatUserInfos(chatInfo.ChatId, chatInfo.NewChatUserInfos);
+
+                ProcessNewChatMessages(chatInfo.ChatId, chatInfo.NewChatMessages);
+            }
+        }
+
+        protected override async Task OnSuccessfulResponse(HttpResponseMessage response)
+        {
+            var resp = await response.Content.ReadAsAsync<ServerInfoOutput>();
+
+            ProcessNewChats(resp.NewChats);
+
+            ProcessLostChats(resp.LostChats);
+
+            ProcessNewUsers(resp.NewUsers);
+
+            ProcessUsersWithNewInfo(resp.UsersWithNewInfo);
+
+            ProcessNewChatInfos(resp.NewChatInfo);
+
+            // mark chats as polled
+            foreach (var chatId in _polledChats)
+            {
                 lock (ChatMessagesDictionary)
                 {
-                    if (!ChatMessagesDictionary.ContainsKey(chatInfo.ChatId))
+                    if (!ChatMessagesDictionary.ContainsKey(chatId))
                     {
-                        ChatMessagesDictionary.Add(chatInfo.ChatId, new MessageWithState {IsPolled = true, MessageId = -1});
-                        wasPolled = false;
-                    }
-                    else if (!ChatMessagesDictionary[chatInfo.ChatId].IsPolled)
-                    {
-                        wasPolled = false;
-                        ChatMessagesDictionary[chatInfo.ChatId].IsPolled = true;
-                    }
-                }
-                if (chatInfo.NewChatMessages == null || !chatInfo.NewChatMessages.Any()) continue;
-                    if (wasPolled)
-                    NewMessagesEvent?.Invoke(this, chatInfo.NewChatMessages);
-
-                lock (ChatMessagesDictionary)
-                {
-                    if (ChatMessagesDictionary.ContainsKey(chatInfo.ChatId))
-                    {
-                        ChatMessagesDictionary[chatInfo.ChatId].MessageId = chatInfo.NewChatMessages.Last().Id;
+                        ChatMessagesDictionary.Add(chatId, new MessageWithState { IsPolled = true, MessageId = -1 });
                     }
                     else
                     {
-                        ChatMessagesDictionary.Add(chatInfo.ChatId, new MessageWithState{IsPolled = true, MessageId = chatInfo.NewChatMessages.Last().Id});
+                        ChatMessagesDictionary[chatId].IsPolled = true;
                     }
                 }
-
-                if (!wasPolled) continue;
-                if (chatInfo.NewChatMessages.Any(x => x.SenderId != (_usersClient?.UserId ?? -1)))
-                    lock (_newChatMessagesHandlers)
-                    {
-                        if (!_newChatMessagesHandlers.ContainsKey(chatInfo.ChatId)) continue;
-                        _newChatMessagesHandlers[chatInfo.ChatId]?.Invoke(this,
-                            chatInfo.NewChatMessages.Where(x => x.SenderId != (_usersClient?.UserId ?? -1)));
-                    }
             }
         }
     }

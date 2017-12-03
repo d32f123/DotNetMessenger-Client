@@ -4,9 +4,11 @@ using System.Threading;
 using System.Windows;
 using DotNetMessenger.Model;
 using DotNetMessenger.RClient;
+using DotNetMessenger.WPFClient.Router;
 
 namespace DotNetMessenger.WPFClient.ViewModels.Info
 {
+    [WindowSettings("Chat info", true)]
     public class ChatInfoViewModel : ViewModelBase
     {
         private Chat _chat;
@@ -15,7 +17,7 @@ namespace DotNetMessenger.WPFClient.ViewModels.Info
             get => _chat;
             set
             {
-                if (_chat == value) return;
+                if (ReferenceEquals(_chat, value)) return;
                 _chat = value;
                 UsersInfo.Clear();
                 OnPropertyChanged(nameof(Chat));
@@ -30,7 +32,8 @@ namespace DotNetMessenger.WPFClient.ViewModels.Info
                 {
                     Application.Current.Dispatcher.Invoke(async () =>
                     {
-                        foreach (var userId in _chat.Users)
+                        var chatUsers = (await ClientApi.ChatsClient.GetChatAsync(_chat.Id)).Users;
+                        foreach (var userId in chatUsers)
                         {
                             var user = await ClientApi.UsersClient.GetUserAsync(userId);
                             UsersInfo.Add(new ChatUserEntryViewModel(_chat.Id, user));

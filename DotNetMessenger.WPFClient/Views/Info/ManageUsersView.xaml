@@ -1,12 +1,14 @@
-﻿<UserControl x:Class="DotNetMessenger.WPFClient.Views.Info.ChatInfoView"
+﻿<UserControl x:Class="DotNetMessenger.WPFClient.Views.Info.ManageUsersView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:info="clr-namespace:DotNetMessenger.WPFClient.ViewModels.Info"
              xmlns:componentModel="clr-namespace:System.ComponentModel;assembly=WindowsBase"
-             mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="300" d:DataContext="{d:DesignInstance info:ChatInfoViewModel}">
+             xmlns:system="clr-namespace:System;assembly=mscorlib"
+             xmlns:enums="clr-namespace:DotNetMessenger.Model.Enums;assembly=DotNetMessenger.Model"
+             mc:Ignorable="d" x:Name="Control"
+             d:DesignHeight="300" d:DesignWidth="300" d:DataContext="{d:DesignInstance info:ManageUsersViewModel}">
     <UserControl.Resources>
         <CollectionViewSource x:Key="UsersSorted" Source="{Binding Path=UsersInfo}" IsLiveSortingRequested="True">
             <CollectionViewSource.SortDescriptions>
@@ -19,6 +21,12 @@
                 <componentModel:SortDescription PropertyName="Username" Direction="Ascending"/>
             </CollectionViewSource.SortDescriptions>
         </CollectionViewSource>
+        <ObjectDataProvider x:Key="DataFromEnum" MethodName="GetValues"
+                            ObjectType="{x:Type system:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="enums:UserRoles"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
     </UserControl.Resources>
     <StackPanel Orientation="Vertical">
         <Border Background="GhostWhite"  BorderBrush="Gainsboro" BorderThickness="1">
@@ -48,7 +56,7 @@
         <DataGrid CanUserAddRows="False" CanUserReorderColumns="False" CanUserDeleteRows="False" 
                   CanUserResizeColumns="False" CanUserResizeRows="False" CanUserSortColumns="False" 
                   GridLinesVisibility="None" SelectionMode="Single" SelectionUnit="Cell" IsReadOnly="True"
-                  RowHeaderWidth="0" ItemsSource="{Binding Source={StaticResource UsersSorted}}" AutoGenerateColumns="False" Style="{DynamicResource DataGridStyle1}">
+                  RowHeaderWidth="0" ItemsSource="{Binding Source={StaticResource UsersSorted}}" AutoGenerateColumns="False">
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header="C" Width="10" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
@@ -71,13 +79,26 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Header="Username" IsReadOnly="True" Binding="{Binding Path=Username, Mode=OneWay}"/>
-                <DataGridTextColumn Header="User Role" IsReadOnly="True" Binding="{Binding Path=UserRole, Mode=OneWay}"/>
-                <DataGridCheckBoxColumn Header="R" IsReadOnly="True" Binding="{Binding Path=ReadPermission, Mode=OneWay}"/>
-                <DataGridCheckBoxColumn Header="W" IsReadOnly="True" Binding="{Binding Path=WritePermission, Mode=OneWay}"/>
-                <DataGridCheckBoxColumn Header="A" IsReadOnly="True" Binding="{Binding Path=AttachPermission, Mode=OneWay}"/>
-                <DataGridCheckBoxColumn Header="I" IsReadOnly="True" Binding="{Binding Path=ChatInfoPermission, Mode=OneWay}"/>
-                <DataGridCheckBoxColumn Header="U" IsReadOnly="True" Binding="{Binding Path=UserManagementPermission, Mode=OneWay}"/>
+                <DataGridTemplateColumn Header="UserRole">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate DataType="{x:Type info:ChatUserEntryViewModel}">
+                            <ComboBox IsEnabled="{Binding Path=IsNotSelfOrCreator}" ItemsSource="{Binding Source={StaticResource DataFromEnum}}" 
+                                      SelectedItem="{Binding Path=UserRole, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"></ComboBox>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Kick user">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate DataType="{x:Type info:ChatUserEntryViewModel}">
+                            <Button Content="Kick" Command="{Binding ElementName=Control, Path=DataContext.RemoveUserCommand}" CommandParameter="{Binding}"></Button>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
+        <DockPanel>
+            <Button Command="{Binding Path=SaveChangesCommand}" Content="Save" Margin="5,2,0,5" Height="22" Width="85"/>
+            <Button Command="{Binding Path=CloseCommand}" Content="Exit" Margin="0,2,5,5" Height="22" Width="85" HorizontalAlignment="Right"/>
+        </DockPanel>
     </StackPanel>
 </UserControl>
